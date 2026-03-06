@@ -60,8 +60,9 @@ add_library(${LIBRARY_NAME}
 
 target_include_directories(${LIBRARY_NAME} PUBLIC
     include
+    /usr/include/eigen3
     ${BULLET_INCLUDE_DIRS}
-    ${EIGEN_INCLUDE_DIRS}
+    # ${EIGEN_INCLUDE_DIRS}
     ${GLEW_INCLUDE_DIRS}
     ${GLFW_INCLUDE_DIRS}
     ${THREADPOOL_INCLUDE_DIRS}
