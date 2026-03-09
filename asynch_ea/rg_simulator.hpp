@@ -3,7 +3,7 @@
 #include "apear/simulator.hpp"
 #include "rg_genome.hpp"
 #include "robot_design/sim.h"
-
+#include "robot_design/glfw_viewer.h"
 
 
 namespace ea_rg{
@@ -13,7 +13,7 @@ namespace rd = robot_design;
 class RoboGrammarSimulator: public apear::Simulator<RoboGrammarInd>{
 public:
     RoboGrammarSimulator() = delete;
-    RoboGrammarSimulator(apear::settings::ParametersMapPtr &param);
+    RoboGrammarSimulator(apear::settings::ParametersMapPtr &param, bool headless = true);
 
     bool init_environment(const apear::Environment::Ptr &env) override;
     bool init(const IndPtr &ind) override;
@@ -25,8 +25,12 @@ public:
     void reconnect() override;
 
 private:
-    std::shared_ptr<rd::BulletSimulation> _sim;
-
+    std::shared_ptr<rd::BulletSimulation> _sim = nullptr;
+    double _max_episode_time = 0;
+    double _time = 0;
+    double _time_step = 0;
+    std::shared_ptr<rd::GLFWViewer> _viewer = nullptr;
+    int _robot_idx = 0;
 };
 
 }

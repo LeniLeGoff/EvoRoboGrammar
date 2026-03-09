@@ -17,6 +17,12 @@ public:
     RoboGrammarGenome(const apear::misc::RandNum::Ptr& rn, const apear::settings::ParametersMapPtr &param)
         : apear::Genome(rn,param){}
 
+    RoboGrammarGenome(const RoboGrammarGenome &genome)
+        : apear::Genome(genome),
+        _grammar(genome._grammar),
+        _rule_seq(genome._rule_seq),
+        _graph(genome._graph){}
+
     Genome::Ptr clone() const override{
         return std::make_shared<RoboGrammarGenome>(*this);
     }
@@ -26,8 +32,10 @@ public:
     void symmetrical_crossover(const Genome::Ptr& partner,Genome::Ptr child1,Genome::Ptr child2) override{}//TODO
     void random() override;
 
-    void set_rule_seq(const std::vector<int> &rule_seq);
-    const std::vector<int> &get_rule_seq() const{return _rule_seq;}
+    bool has_nonterminals(const rd::Graph &graph);
+
+    void set_rule_seq(const std::vector<std::pair<int,int>> &rule_seq);
+    const std::vector<std::pair<int,int>> &get_rule_seq() const{return _rule_seq;}
 
     const rd::Graph& get_graph() const{return _graph;}
 
@@ -39,19 +47,22 @@ private:
     robot_design::Graph _make_initial_graph();
 
     //mutation operators
+    void _add_rule(int rule_type);
     /**
      * @brief expand graph with a random applicable rule
      */
     void _grow_graph();
+    void _close_graph();
     /**
      * @brief prune randomly an end link of the graph
      */
     void _prune_graph();
 
+
     rd::Graph _make_graph();
 
-    std::vector<rd::Rule> _grammar; //list of possible building rules
-    std::vector<int> _rule_seq; //the sequence of applied rules, use for logging and rebuild the graph
+    std::array<std::vector<rd::Rule>,2> _grammar; //set of existing rules, 0: growing rules, 1: closing rules
+    std::vector<std::pair<int,int>> _rule_seq; //the sequence of applied rules, use for logging and rebuild the graph, first: rule type, second, rule idx
     rd::Graph _graph; //graph representation of the robot design, use to build the robot
 };
 
@@ -66,6 +77,7 @@ public:
     }
     RoboGrammarInd(const RoboGrammarGenome::Ptr &morph_gen,const apear::Genome::Ptr &ctrl_gen) :
         apear::Individual(morph_gen,ctrl_gen){}
+    RoboGrammarInd(const RoboGrammarInd &ind) : apear::Individual(ind), _robot(ind._robot){}
 
     Individual::Ptr clone() override{
         return std::make_shared<RoboGrammarInd>(*this);
