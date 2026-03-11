@@ -19,10 +19,13 @@ public:
     bool init(const IndPtr &ind) override;
     bool step() override;
     bool stop() override;
+    void update_robot(const IndPtr &ind) override;
     void update_ind(IndPtr &ind, const apear::Environment::Ptr& env) override;
     apear::sim_state_t state() override;
     double time() override;
     void reconnect() override;
+
+
 
 private:
     std::shared_ptr<rd::BulletSimulation> _sim = nullptr;

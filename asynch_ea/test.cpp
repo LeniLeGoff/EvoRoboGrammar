@@ -17,7 +17,7 @@ int main(int argc, char** argv){
     res->init();
     dealer.set_ea(res);
     dealer.set_environment(env);
-    dealer.init(1,false); //start in graphical mode
+    dealer.init(5,true);
     while(dealer.update_simulators()){
         usleep(5000);
     }

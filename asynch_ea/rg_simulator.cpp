@@ -37,14 +37,31 @@ bool RoboGrammarSimulator::init(const IndPtr &ind){
         if(_viewer != nullptr)
             _viewer.reset();
         _viewer = std::make_shared<rd::GLFWViewer>();
-        _viewer->camera_params_.yaw_ = -M_PI_2;
+        _viewer->camera_params_.yaw_ = -M_PI/4;
         _viewer->camera_params_.pitch_ = -M_PI/6;
         rd::Vector3 lower = {0,0,0};
         rd::Vector3 upper = {0,0,0};
         _sim->getRobotWorldAABB(_robot_idx,lower,upper);
-        _viewer->camera_params_.distance_ = 10 * (upper - lower).squaredNorm();
+        _viewer->camera_params_.distance_ = 2 * (upper - lower).squaredNorm();
     }
     return true;
+}
+
+void RoboGrammarSimulator::update_robot(const IndPtr &ind){
+    int dof = _sim->getRobotDofCount(_robot_idx);
+    rd::VectorX current_pos(dof);
+    _sim->getJointPositions(_robot_idx,current_pos);
+    std::vector<double> current_pos_std(current_pos.rows());
+    for(int i = 0; i < current_pos.rows(); i++){
+        // std::cout << current_pos[i] << " ";
+        current_pos_std[i] = current_pos[i]/M_PI_2; //scale the joint positions to [-1,1]
+    }
+    // std::cout << std::endl;
+    std::vector<double> next_pos_std = ind->get_control()->update(current_pos_std);
+    rd::VectorX next_pos(next_pos_std.size());
+    for(size_t i = 0; i < next_pos_std.size(); i++)
+        next_pos[i] = next_pos_std[i]*M_PI/2; //scale the control output to [-pi/2,pi/2]
+    _sim->setJointTargetPositions(_robot_idx,next_pos);
 }
 
 bool RoboGrammarSimulator::step(){
