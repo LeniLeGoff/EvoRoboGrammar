@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 
-file(GLOB_RECURSE SOURCES "*.cpp")
+file(GLOB_RECURSE SOURCES "src/*.cpp")
 message(${SOURCES})
 
 # find_package(apear)
@@ -16,7 +16,7 @@ set(BULLET_INCLUDE_DIRS ${BULLET_ROOT}/src ${BULLET_ROOT}/Extras)
 
 
 
-add_executable(ea_rg ${SOURCES})
+add_library(ea_rg STATIC ${SOURCES})
 target_link_libraries(ea_rg PUBLIC robotdesign apear tbb)
 target_include_directories(ea_rg PUBLIC
     "include"
@@ -25,3 +25,5 @@ target_include_directories(ea_rg PUBLIC
     ${BULLET_INCLUDE_DIRS}
 )
 target_compile_options(ea_rg PRIVATE -Wall -Werror)
+
+add_subdirectory(tests)

@@ -1,7 +1,7 @@
-#include "rg_simulator.hpp"
+#include "ea_rg/rg_simulator.hpp"
 #include "apear/settings.hpp"
-#include "flat_terrain.hpp"
-#include "rg_genome.hpp"
+#include "ea_rg/tasks.hpp"
+#include "ea_rg/rg_genome.hpp"
 #include <cmath>
 
 using namespace ea_rg;
@@ -17,14 +17,6 @@ RoboGrammarSimulator::RoboGrammarSimulator(apear::settings::ParametersMapPtr &pa
 }
 
 
-
-bool RoboGrammarSimulator::init_environment(const apear::Environment::Ptr &env){
-    if(env == nullptr)
-        return false;
-    std::dynamic_pointer_cast<FlatTerrain>(env)->add_terrain(_sim);
-    return true;
-}
-
 bool RoboGrammarSimulator::init(const IndPtr &ind){
     std::vector<double> pos = apear_st::getParameter<apear_st::Sequence<double>>(_parameters,"#initPosition").value;
     std::vector<double> rot = apear_st::getParameter<apear_st::Sequence<double>>(_parameters,"#initOrientation").value;
@@ -32,6 +24,11 @@ bool RoboGrammarSimulator::init(const IndPtr &ind){
     ind->decode();
     rd::Robot robot = std::dynamic_pointer_cast<RoboGrammarInd>(ind)->get_robot();
     _robot_idx = _sim->addRobot(std::make_shared<rd::Robot>(robot),{pos[0],pos[1],pos[2]},{rot[0],rot[1],rot[2],rot[3]});
+    _sim->setJointTargetPositions(_robot_idx,
+                                  rd::VectorX::Zero(_sim->getRobotDofCount(_robot_idx)));
+    for(int i = 0; i < 100; i++)
+        _sim->step();
+
     _state = apear::sim_state_t::INITIALIZED;
     if(!_headless){
         if(_viewer != nullptr)
@@ -83,10 +80,7 @@ bool RoboGrammarSimulator::stop(){
     return true;
 }
 
-void RoboGrammarSimulator::update_ind(IndPtr &ind, const apear::Environment::Ptr& env){
-    ind->set_objectives({env->fitness_function(ind)});
-    _state = apear::sim_state_t::IDLE;
-}
+
 
 apear::sim_state_t RoboGrammarSimulator::state(){
     return _state;

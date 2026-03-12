@@ -17,7 +17,7 @@ public:
         apear::Control(ctrl)
     {}
 
-     Control::Ptr clone() const override{
+    Control::Ptr clone() const override{
         return std::make_shared<RandomControl>(*this);
     }
 

@@ -1,7 +1,6 @@
 build/
 *.swp
 __pycache__/
-*.csv
 *.mp4
 *.png
 *.pdf

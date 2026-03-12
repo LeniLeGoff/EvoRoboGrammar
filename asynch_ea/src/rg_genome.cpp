@@ -1,5 +1,5 @@
-#include "rg_genome.hpp"
-#include "rg_controllers.hpp"
+#include "ea_rg/rg_genome.hpp"
+#include "ea_rg/rg_controllers.hpp"
 
 using namespace ea_rg;
 namespace rd = robot_design;

@@ -1,20 +1,23 @@
-#seed,int,42
+#seed,int,232274027
 #verbose,bool,1
 
 #simTimeStep,double,0.02
-#maxEpisodeTime,double,20
+#maxEpisodeTime,double,5
 #initPosition,sequence_double,0;0.5;0
 #initOrientation,sequence_double,1;0;0;0
 #evaluationOrder,int,0
 
-#populationSize,int,10
+#populationSize,int,1
 #maxNbrEval,int,20
 
 #grammarFile,string,/home/leni/git/EvoRoboGrammar/data/designs/grammar_apr30_wheel.dot
-#ruleSeqInitSize,int,5
+#ruleSeqInitSize,int,10
 #ruleSeqMaxSize,int,80
 #mutationRate,double,1
 #probGrow,double,0.5
 #probPrune,double,0.1
 #probSwap,double,0.5
+
+#gridSize,sequence_int,16;16
+#cellSize,double,0.25
 
