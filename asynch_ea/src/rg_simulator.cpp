@@ -1,6 +1,5 @@
 #include "ea_rg/rg_simulator.hpp"
 #include "apear/settings.hpp"
-#include "ea_rg/tasks.hpp"
 #include "ea_rg/rg_genome.hpp"
 #include <cmath>
 
@@ -44,7 +43,12 @@ bool RoboGrammarSimulator::init(const IndPtr &ind){
     return true;
 }
 
-void RoboGrammarSimulator::update_robot(const IndPtr &ind){
+bool RoboGrammarSimulator::update_robot(const IndPtr &ind){
+    if(ind->get_control() == nullptr){
+        if(apear_st::getParameter<apear_st::Boolean>(_parameters,"#verbose").value)
+            std::cout << "No controller for this individual" << std::endl;
+        return false;
+    }
     int dof = _sim->getRobotDofCount(_robot_idx);
     rd::VectorX current_pos(dof);
     _sim->getJointPositions(_robot_idx,current_pos);
@@ -59,6 +63,7 @@ void RoboGrammarSimulator::update_robot(const IndPtr &ind){
     for(size_t i = 0; i < next_pos_std.size(); i++)
         next_pos[i] = next_pos_std[i]*M_PI/2; //scale the control output to [-pi/2,pi/2]
     _sim->setJointTargetPositions(_robot_idx,next_pos);
+    return true;
 }
 
 bool RoboGrammarSimulator::step(){

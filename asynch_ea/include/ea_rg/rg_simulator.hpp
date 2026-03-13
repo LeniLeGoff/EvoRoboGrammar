@@ -21,10 +21,11 @@ public:
     bool init(const IndPtr &ind) override;
     bool step() override;
     bool stop() override;
-    void update_robot(const IndPtr &ind) override;
+    bool update_robot(const IndPtr &ind) override;
     apear::sim_state_t state() override;
     double time() override;
     void reconnect() override;
+
 
     std::shared_ptr<rd::BulletSimulation> &sim(){return _sim;}
     int get_robot_idx(){return _robot_idx;}

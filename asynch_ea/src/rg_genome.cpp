@@ -251,24 +251,16 @@ rd::Graph RoboGrammarGenome::_make_graph(const std::vector<rule_idx_t> &rule_seq
     return graph;
 }
 
-void RoboGrammarInd::init(){
-    _morph_genome->init();
-    _morph_genome->random();
+int RoboGrammarInd::get_robot_dof() const{
+    int dof = 0;
+    for(const rd::Link &link: _robot.links_){
+        if(link.joint_type_ == rd::JointType::HINGE)
+            dof++;
+    }
+    return dof;
 }
-
-
 
 void RoboGrammarInd::_create_morphology(){
     _robot = rd::buildRobot(std::static_pointer_cast<RoboGrammarGenome>(_morph_genome)->get_graph());
-
 }
 
-void RoboGrammarInd::_create_controller(){
-    _control = std::make_shared<RandomControl>(_rand_num,_parameters);
-    int dof = 0;
-    for(const rd::Link &link: _robot.links_){
-        if(link.joint_type_ != rd::JointType::FIXED)
-            dof++;
-    }
-    std::dynamic_pointer_cast<RandomControl>(_control)->init(dof);
-}

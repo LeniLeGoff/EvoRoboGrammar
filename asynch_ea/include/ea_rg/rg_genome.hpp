@@ -82,33 +82,25 @@ private:
     rd::Graph _graph; //graph representation of the robot design, use to build the robot
 };
 
-class RoboGrammarInd : public apear::Individual{
+class RoboGrammarInd: public apear::Individual{
 public:
+    using Ptr = std::shared_ptr<RoboGrammarInd>;
+    using ConstPtr = std::shared_ptr<const RoboGrammarInd>;
     RoboGrammarInd() : apear::Individual(){
     }
     RoboGrammarInd(const apear::misc::RandNum::Ptr& rn, const apear::settings::ParametersMapPtr &param) :
         apear::Individual(rn,param){
         _morph_genome = std::make_shared<RoboGrammarGenome>(rn,param);
-        _ctrl_genome = std::make_shared<apear::EmptyGenome>();
     }
-    RoboGrammarInd(const RoboGrammarGenome::Ptr &morph_gen,const apear::EmptyGenome::Ptr &ctrl_gen) :
+    RoboGrammarInd(const RoboGrammarGenome::Ptr &morph_gen,const apear::Genome::Ptr &ctrl_gen) :
         apear::Individual(morph_gen,ctrl_gen){}
     RoboGrammarInd(const RoboGrammarInd &ind) : apear::Individual(ind), _robot(ind._robot){}
 
-    Individual::Ptr clone() override{
-        return std::make_shared<RoboGrammarInd>(*this);
-    }
-
-    void init() override;
-
-
+    int get_robot_dof() const;
     const rd::Robot &get_robot() const{return _robot;}
-    void set_simulator(const std::shared_ptr<rd::BulletSimulation> &sim){_sim = sim;}
-private:
+protected:
     void _create_morphology() override;
-    void _create_controller() override;
     rd::Robot _robot;
-    std::shared_ptr<rd::BulletSimulation> _sim = nullptr;
 };
 
 }//ea_rg

@@ -8,26 +8,38 @@ namespace rd = robot_design;
 Exploration::Exploration(const apear_st::ParametersMapPtr &param){
     grid_size = apear_st::getParameter<apear_st::Sequence<int>>(param,"#gridSize").value;
     cell_size = apear_st::getParameter<apear_st::Double>(param,"#cellSize").value;
+    verbose = apear_st::getParameter<apear_st::Boolean>(param,"#verbose").value;
     grid_zones = Eigen::MatrixXi::Zero(grid_size[0],grid_size[1]);
 }
 
 std::vector<double> Exploration::operator()(RoboGrammarSimulator &sim){
-    return {static_cast<double>(grid_zones.sum())/static_cast<double>(grid_size[0]*grid_size[1])};
+    double fitness =  static_cast<double>(grid_zones.sum())/static_cast<double>(grid_size[0]*grid_size[1]);
+    grid_zones = Eigen::MatrixXi::Zero(grid_size[0],grid_size[1]);
+    return {fitness};
+
 }
 
-void Exploration::update(RoboGrammarSimulator &sim){
-    rd::Matrix4 transform;
-    sim.sim()->getLinkTransform(sim.get_robot_idx(),0,transform);
-    rd::Vector3 position = transform.block<>(1,3,3,1);
+bool Exploration::update(RoboGrammarSimulator &sim){
+    rd::Vector3 position;
+    rd::Quaternion orientation;
+    sim.sim()->getRobotPositionAndOrientation(sim.get_robot_idx(),position,orientation);
+    // std::cout << "robot position: " << position.transpose() << std::endl;
+
     std::pair<int,int> idx = real_to_matrix_coord(position);
+    if(idx.first < 0 || idx.first >= grid_size[0] || idx.second < 0 || idx.second >= grid_size[1] || position[1] < 0){
+        if(verbose)
+            std::cout << "robot out of bounds with position " << position.transpose() << std::endl;
+        return false;
+    }
     grid_zones(idx.first,idx.second) = 1;
+    return true;
 
 }
 
 std::pair<int,int> Exploration::real_to_matrix_coord(const rd::Vector3& pos){
     std::pair<int,int> indexes;
     indexes.first = std::trunc(pos[0]/cell_size + std::round(grid_size[0]/2));
-    indexes.second = std::trunc(pos[1]/cell_size + std::round(grid_size[1]/2));
+    indexes.second = std::trunc(pos[2]/cell_size + std::round(grid_size[1]/2));
     if(indexes.first == grid_size[0])
         indexes.first = grid_size[0] - 1;
     if(indexes.second == grid_size[1])
@@ -46,8 +58,8 @@ std::vector<double> FlatTerrain::fitness_function(Sim &sim){
     return (*_fitness_fct)(sim);
 }
 
-void FlatTerrain::update(double time, Sim &sim){
-    _fitness_fct->update(sim);
+bool FlatTerrain::update(double time, Sim &sim){
+    return _fitness_fct->update(sim);
 }
 
 void FlatArena::init(Sim &sim){
@@ -69,6 +81,6 @@ std::vector<double> FlatArena::fitness_function(Sim &sim){
     return (*_fitness_fct)(sim);
 }
 
-void FlatArena::update(double time, Sim &sim){
-    _fitness_fct->update(sim);
+bool FlatArena::update(double time, Sim &sim){
+    return _fitness_fct->update(sim);
 }

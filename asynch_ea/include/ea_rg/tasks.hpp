@@ -14,7 +14,16 @@ struct Function{
     using Ptr = std::shared_ptr<Function>;
     using ConstPtr = std::shared_ptr<const Function>;
     virtual std::vector<double> operator()(RoboGrammarSimulator&) = 0;
-    virtual void update(RoboGrammarSimulator&){}
+    virtual bool update(RoboGrammarSimulator&){return true;}
+};
+
+struct Dummy: public Function{
+    using Ptr = std::shared_ptr<Dummy>;
+    using ConstPtr = std::shared_ptr<const Dummy>;
+
+    std::vector<double> operator()(RoboGrammarSimulator &) override{
+        return {0};
+    }
 };
 
 struct Exploration: public Function{
@@ -24,11 +33,12 @@ struct Exploration: public Function{
     Exploration(const apear::settings::ParametersMapPtr& param);
 
     std::vector<double> operator()(RoboGrammarSimulator &) override;
-    void update(RoboGrammarSimulator&) override;
+    bool update(RoboGrammarSimulator&) override;
     std::pair<int,int> real_to_matrix_coord(const rd::Vector3&);
     std::vector<int> grid_size = {8,8};
     Eigen::MatrixXi grid_zones;
     double cell_size;
+    bool verbose = false;
 };
 }//fitness
 
@@ -46,7 +56,7 @@ public:
     FlatTerrain(){}
     void init(Sim &sim) override;
     std::vector<double> fitness_function(Sim &sim) override;
-    void update(double time,Sim &sim) override;
+    bool update(double time,Sim &sim) override;
     void set_fitness_fct(const fitness::Function::Ptr& fct){_fitness_fct = fct;}
 private:
     fitness::Function::Ptr _fitness_fct = nullptr;
@@ -63,7 +73,7 @@ public:
     {}
     void init(Sim &sim) override;
     std::vector<double> fitness_function(Sim &sim) override;
-    void update(double time,Sim &sim) override;
+    bool update(double time,Sim &sim) override;
     void set_fitness_fct(const fitness::Function::Ptr& fct){_fitness_fct = fct;}
 private:
     fitness::Function::Ptr _fitness_fct = nullptr;
