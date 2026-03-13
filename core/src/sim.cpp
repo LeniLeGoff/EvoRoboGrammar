@@ -258,6 +258,14 @@ Index BulletSimulation::getRobotCount() const { return robot_wrappers_.size(); }
 
 Index BulletSimulation::getPropCount() const { return prop_wrappers_.size(); }
 
+void BulletSimulation::getRobotPositionAndOrientation(Index robot_idx, Ref<Vector3> pos,
+                                         Quaternion &rot) const {
+  const btMultiBody &multi_body = *robot_wrappers_[robot_idx].multi_body_;
+  btTransform base_transform = multi_body.getBaseWorldTransform();
+  pos = eigenVector3FromBullet(base_transform.getOrigin());
+  rot = eigenQuaternionFromBullet(base_transform.getRotation());
+}
+
 Index BulletSimulation::findRobotIndex(const Robot &robot) const {
   for (std::size_t i = 0; i < robot_wrappers_.size(); ++i) {
     if (robot_wrappers_[i].robot_.get() == &robot) {

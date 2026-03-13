@@ -28,6 +28,8 @@ public:
   virtual std::shared_ptr<const Prop> getProp(Index prop_idx) const = 0;
   virtual Index getRobotCount() const = 0;
   virtual Index getPropCount() const = 0;
+  virtual void getRobotPositionAndOrientation(Index robot_idx, Ref<Vector3> pos,
+                                           Quaternion &rot) const = 0;
   virtual Index findRobotIndex(const Robot &robot) const = 0;
   virtual Index findPropIndex(const Prop &prop) const = 0;
   virtual void getLinkTransform(Index robot_idx, Index link_idx,
@@ -119,6 +121,8 @@ public:
   virtual std::shared_ptr<const Prop> getProp(Index prop_idx) const override;
   virtual Index getRobotCount() const override;
   virtual Index getPropCount() const override;
+  virtual void getRobotPositionAndOrientation(Index robot_idx, Ref<Vector3> pos,
+                                           Quaternion &rot) const override;
   virtual Index findRobotIndex(const Robot &robot) const override;
   virtual Index findPropIndex(const Prop &prop) const override;
   virtual void getLinkTransform(Index robot_idx, Index link_idx,
