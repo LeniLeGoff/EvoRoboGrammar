@@ -5,7 +5,6 @@ using namespace ea_rg;
 namespace rd = robot_design;
 namespace apear_st = apear::settings;
 
-int RoboGrammarGenome::_highest_id = 0;
 
 void RoboGrammarGenome::init(){
     std::string grammar_file = apear_st::getParameter<apear_st::String>(_parameters,"#grammarFile").value;

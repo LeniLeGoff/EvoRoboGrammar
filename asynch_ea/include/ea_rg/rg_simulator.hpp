@@ -23,12 +23,13 @@ public:
     bool stop() override;
     bool update_robot(const IndPtr &ind) override;
     apear::sim_state_t state() override;
-    double time() override;
+    double time() const override;
     void reconnect() override;
 
 
     std::shared_ptr<rd::BulletSimulation> &sim(){return _sim;}
-    int get_robot_idx(){return _robot_idx;}
+    const std::shared_ptr<rd::BulletSimulation> &get_sim() const{return _sim;}
+    int get_robot_idx() const {return _robot_idx;}
 
 
 

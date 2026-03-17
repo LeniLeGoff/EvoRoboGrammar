@@ -91,7 +91,7 @@ apear::sim_state_t RoboGrammarSimulator::state(){
     return _state;
 }
 
-double RoboGrammarSimulator::time(){
+double RoboGrammarSimulator::time() const{
     return _time;
 }
 

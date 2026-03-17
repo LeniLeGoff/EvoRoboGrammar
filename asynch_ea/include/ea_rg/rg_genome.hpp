@@ -16,11 +16,11 @@ public:
     using rule_idx_t = std::pair<size_t,size_t>; //first: rule type, second: rule idx in the type
 
     RoboGrammarGenome() : apear::Genome(){
-                _id = _highest_id++;
+        _id = 0;
     }
     RoboGrammarGenome(const apear::misc::RandNum::Ptr& rn, const apear::settings::ParametersMapPtr &param)
         : apear::Genome(rn,param){
-        _id = _highest_id++;
+        _id = 0;
     }
 
     RoboGrammarGenome(const RoboGrammarGenome &genome)
@@ -50,7 +50,6 @@ public:
 
 private:
 
-    static int _highest_id;
     robot_design::Graph _make_initial_graph();
 
     //mutation operators

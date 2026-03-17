@@ -3,6 +3,7 @@
 #include "ea_rg/rg_genome.hpp"
 #include "ea_rg/rg_simulator.hpp"
 #include "apear/logging.hpp"
+#include "apear/ame.hpp"
 
 using namespace ea_rg;
 
@@ -27,13 +28,43 @@ private:
     void _create_controller() override;
 };
 
+//LOGGING CLASSES
+
 class RGGenomeLog: public apear::Logging<MEHKInd,RoboGrammarSimulator>{
 public:
     RGGenomeLog() : Logging(){}
     RGGenomeLog(const std::string &file) : Logging(file){}
-    RGGenomeLog(const RGGenomeLog& l) : Logging<MEHKInd,RoboGrammarSimulator>(l){}
-    void register_data(const IndPtr &ind,const RoboGrammarSimulator &sim) override;
-    void saveLog() override;
+    RGGenomeLog(const RGGenomeLog& l) : Logging(l){}
+    void saveLog(const apear::EA<MEHKInd>::Ptr&) override;
+};
+
+class FitnessLog: public apear::Logging<MEHKInd,RoboGrammarSimulator>{
+public:
+    FitnessLog(): Logging(){}
+    FitnessLog(const std::string &file) : Logging(file){}
+    FitnessLog(const FitnessLog& l) : Logging(l){}
+    void saveLog(const apear::EA<MEHKInd>::Ptr&) override;
+};
+
+class RolloutLog: public apear::Logging<MEHKInd,RoboGrammarSimulator>{
+public:
+    RolloutLog(): Logging(){}
+    RolloutLog(const std::string &file) : Logging(file){}
+    RolloutLog(const RolloutLog& l) : Logging(l){}
+    void saveLog(const apear::EA<MEHKInd>::Ptr&) override;
+    void register_data(const IndPtr&, const RoboGrammarSimulator&) override;
 private:
-    std::vector<std::string> _data;
+    std::map<int,apear::rollout_t> _data;
+};
+
+
+class TrajectoryLog: public apear::Logging<MEHKInd,RoboGrammarSimulator>{
+public:
+    TrajectoryLog(): Logging(){}
+    TrajectoryLog(const std::string &file) : Logging(file){}
+    TrajectoryLog(const TrajectoryLog& l) : Logging(l){}
+    void saveLog(const apear::EA<MEHKInd>::Ptr&) override;
+    void register_data(const IndPtr&, const RoboGrammarSimulator&) override;
+private:
+    std::map<int,apear::trajectory_t> _data;
 };

@@ -1,7 +1,6 @@
 #include "mehk.hpp"
 #include "apear/algorithms/homeokinetic_controller.hpp"
 #include "apear/async_dealer.hpp"
-#include "apear/ame.hpp"
 
 #include "ea_rg/tasks.hpp"
 
@@ -27,21 +26,7 @@ void MEHKInd::_create_controller(){
             apear_st::getParameter<apear_st::Double>(_parameters,"#HKNoiseStrength").value);
 }
 
-void RGGenomeLog::register_data(const IndPtr &ind,const RoboGrammarSimulator &sim){
-    std::stringstream genome;
-    genome << ind->get_morph_genome()->to_string();
-    _data.push_back(genome.str());
-}
 
-void RGGenomeLog::saveLog(){
-    std::ofstream log_file;
-    if(openOLogFile(log_file)){
-        for(const std::string &line : _data){
-            log_file << line << std::endl;
-        }
-        log_file.close();
-    }
-}
 
 
 int main(int argc, char** argv){
@@ -71,7 +56,11 @@ int main(int argc, char** argv){
     apear::misc::RandNum::Ptr rand_num = std::make_shared<apear::misc::RandNum>(seed);
     apear::AsyncDealer<MEHKInd,RoboGrammarSimulator> dealer(param,rand_num);
 
+    //add logging classes
     dealer.add_logging(std::make_shared<RGGenomeLog>(apear_st::getParameter<apear_st::String>(param,"#genomeLogFile").value));
+    dealer.add_logging(std::make_shared<FitnessLog>(apear_st::getParameter<apear_st::String>(param,"#fitnessLogFile").value));
+    dealer.add_logging(std::make_shared<RolloutLog>());
+    dealer.add_logging(std::make_shared<TrajectoryLog>());
 
     std::vector<double> arena_size = apear_st::getParameter<apear_st::Sequence<double>>(param,"#arenaSize").value;
     ea_rg::FlatArena::Ptr env = std::make_shared<ea_rg::FlatArena>(arena_size[0],arena_size[1]);
@@ -83,4 +72,87 @@ int main(int argc, char** argv){
     dealer.init(nbr_sim,headless);
     while (dealer.update_simulators()) {}
     return 0;
+}
+
+void RGGenomeLog::saveLog(const apear::EA<MEHKInd>::Ptr &ea){
+    std::ofstream log_file;
+    if(openOLogFile(log_file)){
+        for(const IndPtr &ind: ea->evaluated()){
+            log_file << ind->get_morph_genome()->id() << " " << ind->get_morph_genome()->to_string() << std::endl;
+        }
+        log_file.close();
+    }
+}
+
+void FitnessLog::saveLog(const apear::EA<MEHKInd>::Ptr &ea){
+    std::ofstream log_file;
+    if(openOLogFile(log_file)){
+        for(const IndPtr &ind: ea->evaluated()){
+            log_file << ind->get_morph_genome()->id()
+            << "," << ind->get_morph_genome()->get_parents_ids()[0]
+            << "," << ind->get_morph_genome()->get_parents_ids()[1]
+            << "," << ind->get_objectives()[0] << std::endl;
+        }
+        log_file.close();
+    }
+}
+
+void RolloutLog::register_data(const IndPtr& ind, const RoboGrammarSimulator &sim){
+    if(_data.find(ind->id()) == _data.end())
+        _data[ind->id()] = apear::rollout_t();
+    int dof  = sim.get_sim()->getRobotDofCount(sim.get_robot_idx());
+    rd::VectorX act(dof);
+    sim.get_sim()->getJointPositions(sim.get_robot_idx(),act);
+    rd::VectorX obs(dof);
+    sim.get_sim()->getJointPositions(sim.get_robot_idx(),obs);
+
+    std::vector<double> action(act.rows()), observation(obs.rows());
+    for(int i = 0; i < act.rows(); i++)
+        action[i] = act[i];
+    for(int i = 0; i < obs.rows(); i++)
+        observation[i] = obs[i];
+    _data[ind->id()].push_back(apear::act_obs_t(sim.time(),observation,action));
+}
+
+void RolloutLog::saveLog(const apear::EA<MEHKInd>::Ptr&){
+    std::ofstream log_file;
+    for(const std::pair<int,apear::rollout_t> &elt: _data){
+
+        std::stringstream sstr;
+        sstr << "rollout_" << elt.first << ".csv";
+        if(openOLogFile(log_file,sstr.str())){
+            for(const apear::act_obs_t &ao: elt.second)
+                log_file << ao.to_string() << std::endl;
+        }
+        log_file.close();
+    }
+    _data.clear();
+}
+
+void TrajectoryLog::register_data(const IndPtr& ind, const RoboGrammarSimulator &sim){
+    if(_data.find(ind->id()) == _data.end())
+        _data[ind->id()] = apear::trajectory_t();
+    rd::Vector3 pos;
+    rd::Quaternion ori;
+    sim.get_sim()->getRobotPositionAndOrientation(sim.get_robot_idx(),pos,ori);
+
+    apear::waypoint_t wp;
+    wp.position = {pos[0],pos[1],pos[2]};
+    wp.quat_ori = {ori.x(),ori.y(),ori.z(),ori.w()};
+    wp.time = sim.time();
+    _data[ind->id()].push_back(wp);
+}
+
+void TrajectoryLog::saveLog(const apear::EA<MEHKInd>::Ptr&){
+    std::ofstream log_file;
+    for(const std::pair<int,apear::trajectory_t> &elt: _data){
+        std::stringstream sstr;
+        sstr << "traj_" << elt.first << ".csv";
+        if(openOLogFile(log_file,sstr.str())){
+            for(const apear::waypoint_t &wp: elt.second)
+                log_file << wp.to_string() << std::endl;
+        }
+        log_file.close();
+    }
+    _data.clear();
 }
