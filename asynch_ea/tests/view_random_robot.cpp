@@ -50,8 +50,7 @@ int main(int argc, char** argv){
 
     std::vector<double> arena_size = apear::settings::getParameter<apear::settings::Sequence<double>>(param,"#arenaSize").value;
     apear::misc::RandNum::Ptr rand_num = std::make_shared<apear::misc::RandNum>(seed);
-    ea_rg::FlatArena env(arena_size[0],arena_size[1]);
-    env.set_fitness_fct(std::make_shared<ea_rg::fitness::Dummy>());
+    ea_rg::FlatArena env(arena_size[0],arena_size[1],ea_rg::fitness::Dummy());
 
     RandomInd::Ptr ind = std::make_shared<RandomInd>(rand_num,param);
     ind->init();

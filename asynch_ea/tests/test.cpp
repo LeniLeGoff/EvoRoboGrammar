@@ -37,15 +37,12 @@ int main(int argc, char** argv){
 
     apear::misc::RandNum::Ptr rand_num = std::make_shared<apear::misc::RandNum>(seed);
     apear::AsyncDealer<RandomInd,RoboGrammarSimulator> dealer(param,rand_num);
-    ea_rg::FlatArena::Ptr env = std::make_shared<ea_rg::FlatArena>(4,4);
-    env->set_fitness_fct(std::make_shared<ea_rg::fitness::Exploration>(param));
+
     apear::EA<RandomInd>::Ptr res = std::make_unique<apear::RandomElitistSearch<RandomInd>>(rand_num,param);
     res->init();
     dealer.set_ea(res);
-    dealer.set_environment(env);
     dealer.init(1,false);
-    while(dealer.update_simulators()){
-        usleep(5000);
-    }
+    dealer.set_environment<ea_rg::FlatArena>(4,4,ea_rg::fitness::Exploration(param));
+    while(dealer.update_simulators()){}
     return 0;
 }

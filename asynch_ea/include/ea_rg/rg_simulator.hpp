@@ -16,7 +16,8 @@ public:
     using ConstPtr = std::shared_ptr<const RoboGrammarSimulator>;
 
     RoboGrammarSimulator() = delete;
-    RoboGrammarSimulator(apear::settings::ParametersMapPtr &param, bool headless = true);
+    RoboGrammarSimulator(apear::settings::ParametersMapPtr param = nullptr, bool headless = true);
+
 
     bool init(const IndPtr &ind) override;
     bool step() override;

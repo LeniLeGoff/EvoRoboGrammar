@@ -46,13 +46,22 @@ public:
     void saveLog(const apear::EA<MEHKInd>::Ptr&) override;
 };
 
+class ParentsLog: public apear::Logging<MEHKInd,RoboGrammarSimulator>{
+public:
+    ParentsLog(): Logging(){}
+    ParentsLog(const std::string &file) : Logging(file){}
+    ParentsLog(const ParentsLog& l) : Logging(l){}
+    void saveLog(const apear::EA<MEHKInd>::Ptr&) override;
+};
+
 class RolloutLog: public apear::Logging<MEHKInd,RoboGrammarSimulator>{
 public:
     RolloutLog(): Logging(){}
     RolloutLog(const std::string &file) : Logging(file){}
     RolloutLog(const RolloutLog& l) : Logging(l){}
     void saveLog(const apear::EA<MEHKInd>::Ptr&) override;
-    void register_data(const IndPtr&, const RoboGrammarSimulator&) override;
+protected:
+    void _register_data(const IndPtr&, const RoboGrammarSimulator&) override;
 private:
     std::map<int,apear::rollout_t> _data;
 };
@@ -64,7 +73,8 @@ public:
     TrajectoryLog(const std::string &file) : Logging(file){}
     TrajectoryLog(const TrajectoryLog& l) : Logging(l){}
     void saveLog(const apear::EA<MEHKInd>::Ptr&) override;
-    void register_data(const IndPtr&, const RoboGrammarSimulator&) override;
+protected:
+    void _register_data(const IndPtr&, const RoboGrammarSimulator&) override;
 private:
     std::map<int,apear::trajectory_t> _data;
 };

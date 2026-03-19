@@ -38,6 +38,8 @@ public:
     void symmetrical_crossover(const Genome::Ptr& partner,Genome::Ptr child1,Genome::Ptr child2) override{}//TODO
     void random() override;
 
+    void make_graph();
+
     bool has_nonterminals(const rd::Graph &graph);
 
     void set_rule_seq(const std::vector<rule_idx_t> &rule_seq);

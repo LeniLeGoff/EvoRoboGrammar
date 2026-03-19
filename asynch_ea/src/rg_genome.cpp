@@ -58,6 +58,10 @@ void RoboGrammarGenome::mutate(){
     }
 }
 
+void RoboGrammarGenome::make_graph(){
+    _graph = _make_graph(_rule_seq);
+}
+
 std::string RoboGrammarGenome::to_string() const{
     std::string str = "";
     for(const rule_idx_t &rule_idx : _rule_seq)
@@ -124,13 +128,26 @@ void RoboGrammarGenome::_swap_rule(){
     if(_rule_seq.size() <= 1)
         return;
     std::vector<rule_idx_t> swapable_rules;
-    int rnd_idx;
+    std::vector<size_t> rules_idx(_rule_seq.size());
+    for(size_t i = 0; i < _rule_seq.size(); i++)
+        rules_idx[i] = i;
+    int rnd_idx = -1;
     do{
-        rnd_idx = _rand_num->rand_int(0,_rule_seq.size()-1);
-        swapable_rules = _find_swappable_rules(_rule_seq[rnd_idx]);
+        if(rnd_idx > 0)
+            rules_idx.erase(rules_idx.begin()+rnd_idx);
+        if(rules_idx.empty())
+            return;
+        rnd_idx = _rand_num->rand_int(0,rules_idx.size()-1);
+        swapable_rules = _find_swappable_rules(_rule_seq[rules_idx[rnd_idx]]);
+        std::vector<rule_idx_t> pre_rules = _rule_seq;
+        pre_rules.erase(pre_rules.begin()+rules_idx[rnd_idx],pre_rules.end());
+        rd::Graph pre_graph = _make_graph(pre_rules);
+        swapable_rules.erase(std::remove_if(swapable_rules.begin(),swapable_rules.end(),[this,pre_graph](rule_idx_t r){
+            return !_check_rule_applicability(_grammar[r.first][r.second],pre_graph);
+        }),swapable_rules.end());
     }while(swapable_rules.empty());
     int swap_rnd_idx = _rand_num->rand_int(0,swapable_rules.size()-1);
-    _rule_seq[rnd_idx] = swapable_rules[swap_rnd_idx];
+    _rule_seq[rules_idx[rnd_idx]] = swapable_rules[swap_rnd_idx];
     _graph = _make_graph(_rule_seq);
 }
 

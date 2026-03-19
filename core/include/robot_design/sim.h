@@ -137,6 +137,7 @@ public:
                                  Ref<VectorX> pos) const override;
   virtual void getJointVelocities(Index robot_idx,
                                   Ref<VectorX> vel) const override;
+  void getJointTorques(Index robot_idx, Ref<VectorX> torques) const;
   virtual void getJointTargetPositions(Index robot_idx,
                                        Ref<VectorX> target_pos) const override;
   virtual void getJointTargetVelocities(Index robot_idx,

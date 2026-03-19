@@ -1,22 +1,22 @@
 #experimentName,string,mehk
-#seed,int,-536515016
+#seed,int,-1
 #verbose,bool,1
 
-#simTimeStep,double,0.1
-#maxEpisodeTime,double,5
+#simTimeStep,double,0.05
+#maxEpisodeTime,double,1200
 #initPosition,sequence_double,0;0.5;0
 #initOrientation,sequence_double,1;0;0;0
 #evaluationOrder,int,0
 
-#populationSize,int,10
+#populationSize,int,100
 #maxNbrEval,int,10000
 
-#grammarFile,string,/home/leni/git/EvoRoboGrammar/data/designs/grammar_apr30_wheel.dot
+#grammarFile,string,/home/leni/git/EvoRoboGrammar/data/designs/grammar_mar19_26.dot
 #ruleSeqInitSize,int,10
 #ruleSeqMaxSize,int,80
 #mutationRate,double,1
 #probGrow,double,0.5
-#probPrune,double,0.1
+#probPrune,double,0
 #probSwap,double,0.5
 #tournamentSize,int,4
 
@@ -30,5 +30,7 @@
 #epsilonA,double,0.1
 #epsilonC,double,0.08
 
+#logRepository,string,/media/leni/DATADRIVE1/evorobo_logs
 #genomeLogFile,string,genomes.csv
 #fitnessLogFile,string,fitnesses.csv
+#parentsLogFile,string,parent_pool.csv

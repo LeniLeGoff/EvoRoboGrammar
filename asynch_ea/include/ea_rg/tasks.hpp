@@ -53,11 +53,11 @@ public:
     using Ptr = std::shared_ptr<FlatTerrain>;
     using ConstPtr = std::shared_ptr<const FlatTerrain>;
 
-    FlatTerrain(){}
+    template<class fit_t>
+    FlatTerrain(fit_t fit): _fitness_fct(std::make_shared<fit_t>(fit)){}
     void init(Sim &sim) override;
     std::vector<double> fitness_function(Sim &sim) override;
     bool update(double time,Sim &sim) override;
-    void set_fitness_fct(const fitness::Function::Ptr& fct){_fitness_fct = fct;}
 private:
     fitness::Function::Ptr _fitness_fct = nullptr;
 };
@@ -67,14 +67,15 @@ public:
     using Ptr = std::shared_ptr<FlatArena>;
     using ConstPtr = std::shared_ptr<const FlatArena>;
 
-    FlatArena(double width, double length)
-        : _width(width),
+    template<class fit_t>
+    FlatArena(double width, double length,fit_t fit)
+        : _fitness_fct(std::make_shared<fit_t>(fit)),
+        _width(width),
         _length(length)
     {}
     void init(Sim &sim) override;
     std::vector<double> fitness_function(Sim &sim) override;
     bool update(double time,Sim &sim) override;
-    void set_fitness_fct(const fitness::Function::Ptr& fct){_fitness_fct = fct;}
 private:
     fitness::Function::Ptr _fitness_fct = nullptr;
     double _width = 0;

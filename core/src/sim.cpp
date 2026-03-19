@@ -369,6 +369,18 @@ void BulletSimulation::getJointVelocities(Index robot_idx,
   }
 }
 
+void BulletSimulation::getJointTorques(Index robot_idx, Ref<VectorX> torques) const {
+  const btMultiBody &multi_body = *robot_wrappers_[robot_idx].multi_body_;
+  int offset = 0;
+  for (int link_idx = 0; link_idx < multi_body.getNumLinks(); ++link_idx) {
+    const btMultibodyLink &link = multi_body.getLink(link_idx);
+    for (int dof_idx = 0; dof_idx < link.m_dofCount; ++dof_idx) {
+      torques(offset) = multi_body.getJointTorque(link_idx);
+      ++offset;
+    }
+  }
+}
+
 void BulletSimulation::getJointTargetPositions(Index robot_idx,
                                                Ref<VectorX> target_pos) const {
   target_pos = robot_wrappers_[robot_idx].joint_target_pos_;
@@ -383,6 +395,8 @@ void BulletSimulation::getJointMotorTorques(Index robot_idx,
                                             Ref<VectorX> motor_torques) const {
   motor_torques = robot_wrappers_[robot_idx].joint_motor_torques_;
 }
+
+
 
 void BulletSimulation::setJointTargets(Index robot_idx,
                                        const Ref<const VectorX> &target) {
@@ -484,13 +498,13 @@ bool BulletSimulation::robotHasCollision(Index robot_idx) const {
   for (int i = 0; i < manifold_count; ++i) {
     const btPersistentManifold *manifold =
         dispatcher_->getManifoldByIndexInternal(i);
-    if (manifold->getBody0()->getUserPointer() == robot ||
+    if (manifold->getBody0()->getUserPointer() == robot &&
         manifold->getBody1()->getUserPointer() == robot) {
-      // Contact involves at least one of the robot's bodies
+      // Contact involves two of the robot's bodies
       int contact_count = manifold->getNumContacts();
       for (int j = 0; j < contact_count; ++j) {
         const btManifoldPoint &manifold_point = manifold->getContactPoint(j);
-        if (manifold_point.getDistance() < 0) {
+        if (manifold_point.getDistance() < -0.01) {
           // Bodies are intersecting
           return true;
         }

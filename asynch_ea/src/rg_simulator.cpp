@@ -8,8 +8,15 @@ namespace apear_st = apear::settings;
 
 
 
-RoboGrammarSimulator::RoboGrammarSimulator(apear::settings::ParametersMapPtr &param, bool headless)
+RoboGrammarSimulator::RoboGrammarSimulator(apear::settings::ParametersMapPtr param, bool headless)
     : apear::Simulator<RoboGrammarInd>(param,headless){
+    apear_st::defaults::parameters->emplace("#maxEpisodeTime",std::make_shared<apear_st::Double>(60));
+    apear_st::defaults::parameters->emplace("#simTimeStep",std::make_shared<apear_st::Double>(0.02));
+    apear_st::defaults::parameters->emplace("#initPosition",
+                                            std::make_shared<apear_st::Sequence<double>>(std::vector<double>({0,0.2,0})));
+    apear_st::defaults::parameters->emplace("#initOrientation",
+                                            std::make_shared<apear_st::Sequence<double>>(std::vector<double>({0,0,1,0})));
+
     _max_episode_time = apear_st::getParameter<apear_st::Double>(_parameters,"#maxEpisodeTime").value;
     _time_step = apear_st::getParameter<apear_st::Double>(_parameters,"#simTimeStep").value;
     _sim = std::make_shared<rd::BulletSimulation>(_time_step);
@@ -23,10 +30,13 @@ bool RoboGrammarSimulator::init(const IndPtr &ind){
     ind->decode();
     rd::Robot robot = std::dynamic_pointer_cast<RoboGrammarInd>(ind)->get_robot();
     _robot_idx = _sim->addRobot(std::make_shared<rd::Robot>(robot),{pos[0],pos[1],pos[2]},{rot[0],rot[1],rot[2],rot[3]});
-    _sim->setJointTargetPositions(_robot_idx,
-                                  rd::VectorX::Zero(_sim->getRobotDofCount(_robot_idx)));
-    for(int i = 0; i < 100; i++)
-        _sim->step();
+    // _sim->setJointTargetPositions(_robot_idx,
+    //                               rd::VectorX::Zero(_sim->getRobotDofCount(_robot_idx))); //set initial joint positions to 45 degrees
+    // for(int i = 0; i < 100; i++)
+    _sim->step();
+    bool self_collision = _sim->robotHasCollision(_robot_idx);
+    if(self_collision)
+        std::cout << "self-collision detected in the robot configuration" << std::endl;
 
     _state = apear::sim_state_t::INITIALIZED;
     if(!_headless){
@@ -40,7 +50,7 @@ bool RoboGrammarSimulator::init(const IndPtr &ind){
         _sim->getRobotWorldAABB(_robot_idx,lower,upper);
         _viewer->camera_params_.distance_ = 2 * (upper - lower).squaredNorm();
     }
-    return true;
+    return !self_collision;
 }
 
 bool RoboGrammarSimulator::update_robot(const IndPtr &ind){
@@ -73,8 +83,12 @@ bool RoboGrammarSimulator::step(){
         _viewer->render(*_sim);
     }
     _time += _time_step;
-    if(_time >= _max_episode_time)
+    if(_max_episode_time < 0)//no time limit
+        return true;
+    if(_time >= _max_episode_time){
         stop();
+        return false;
+    }
     return true;
 }
 

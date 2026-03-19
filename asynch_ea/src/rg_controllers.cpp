@@ -14,3 +14,7 @@ std::vector<double> RandomControl::update(const std::vector<double> &sensorValue
 
     return current_target;
 }
+
+std::vector<double> ViewerControl::update(const std::vector<double> &sensorValues){
+    return _rollout[_current_idx++].action;
+}
