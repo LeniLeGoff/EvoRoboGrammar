@@ -28,4 +28,5 @@ target_compile_options(ea_rg PRIVATE -Wall -Werror)
 
 add_subdirectory(tests)
 add_subdirectory(mehk)
+add_subdirectory(homeokinesis)
 add_subdirectory(tools)

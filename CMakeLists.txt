@@ -4,7 +4,7 @@ project(RobotDesign)
 
 # Use double precision in Bullet
 add_compile_options(-DBT_USE_DOUBLE_PRECISION)
-
+find_package(Torch REQUIRED)
 add_subdirectory(core)
 add_subdirectory(asynch_ea)
 add_subdirectory(examples/python_bindings)
