@@ -8,8 +8,8 @@ namespace apear_st = apear::settings;
 
 
 
-RoboGrammarSimulator::RoboGrammarSimulator(apear::settings::ParametersMapPtr param, bool headless)
-    : apear::Simulator<RoboGrammarInd>(param,headless){
+RoboGrammarSimulator::RoboGrammarSimulator(apear::settings::ParametersMapPtr param, apear::misc::RandNum::Ptr rand_num, bool headless)
+    : apear::Simulator<RoboGrammarInd>(param, rand_num, headless){
     apear_st::defaults::parameters->emplace("#maxEpisodeTime",std::make_shared<apear_st::Double>(60));
     apear_st::defaults::parameters->emplace("#simTimeStep",std::make_shared<apear_st::Double>(0.02));
     apear_st::defaults::parameters->emplace("#initPosition",
@@ -19,25 +19,31 @@ RoboGrammarSimulator::RoboGrammarSimulator(apear::settings::ParametersMapPtr par
 
     _max_episode_time = apear_st::getParameter<apear_st::Double>(_parameters,"#maxEpisodeTime").value;
     _time_step = apear_st::getParameter<apear_st::Double>(_parameters,"#simTimeStep").value;
-    _sim = std::make_shared<rd::BulletSimulation>(_time_step);
+    _sim = std::make_shared<rd::BulletSimulation>(_time_step);    
 }
 
 
 bool RoboGrammarSimulator::init(const IndPtr &ind){
     std::vector<double> pos = apear_st::getParameter<apear_st::Sequence<double>>(_parameters,"#initPosition").value;
     std::vector<double> rot = apear_st::getParameter<apear_st::Sequence<double>>(_parameters,"#initOrientation").value;
+    bool self_collision = false;
+    if(ind != nullptr)
+    {
+        ind->decode();
+        rd::Robot robot = std::dynamic_pointer_cast<RoboGrammarInd>(ind)->get_robot();
+        _robot_idx = _sim->addRobot(std::make_shared<rd::Robot>(robot),{pos[0],pos[1],pos[2]},{rot[0],rot[1],rot[2],rot[3]});
 
-    ind->decode();
-    rd::Robot robot = std::dynamic_pointer_cast<RoboGrammarInd>(ind)->get_robot();
-    _robot_idx = _sim->addRobot(std::make_shared<rd::Robot>(robot),{pos[0],pos[1],pos[2]},{rot[0],rot[1],rot[2],rot[3]});
     // _sim->setJointTargetPositions(_robot_idx,
-    //                               rd::VectorX::Zero(_sim->getRobotDofCount(_robot_idx))); //set initial joint positions to 45 degrees
+    //                               rd::VectorX::Zero(_sim->getRobotDofCount(_robot_idx)));
+        // _sim->setJointTargetVelocities(_robot_idx,
+                                       // rd::VectorX::Zero(_sim->getRobotDofCount(_robot_idx)));
     // for(int i = 0; i < 100; i++)
-    _sim->step();
-    bool self_collision = _sim->robotHasCollision(_robot_idx);
-    if(self_collision)
-        std::cout << "self-collision detected in the robot configuration" << std::endl;
+        _sim->step();
 
+        self_collision = _sim->robotHasCollision(_robot_idx);
+        if(self_collision)
+            std::cout << "self-collision detected in the robot configuration" << std::endl;
+    }
     _state = apear::sim_state_t::INITIALIZED;
     if(!_headless){
         if(_viewer != nullptr)
@@ -47,8 +53,11 @@ bool RoboGrammarSimulator::init(const IndPtr &ind){
         _viewer->camera_params_.pitch_ = -M_PI/6;
         rd::Vector3 lower = {0,0,0};
         rd::Vector3 upper = {0,0,0};
-        _sim->getRobotWorldAABB(_robot_idx,lower,upper);
-        _viewer->camera_params_.distance_ = 2 * (upper - lower).squaredNorm();
+        if(ind != nullptr){
+            _sim->getRobotWorldAABB(_robot_idx,lower,upper);
+            _viewer->camera_params_.distance_ = 2 * (upper - lower).squaredNorm();
+        }
+        _viewer->camera_params_.distance_ = 2;
     }
     return !self_collision;
 }
@@ -59,19 +68,21 @@ bool RoboGrammarSimulator::update_robot(const IndPtr &ind){
             std::cout << "No controller for this individual" << std::endl;
         return false;
     }
+    double input_noise = apear_st::getParameter<apear_st::Double>(_parameters,"#inputNoiseStrength").value;
+    double output_noise = apear_st::getParameter<apear_st::Double>(_parameters,"#outputNoiseStrength").value;
     int dof = _sim->getRobotDofCount(_robot_idx);
     rd::VectorX current_pos(dof);
     _sim->getJointPositions(_robot_idx,current_pos);
     std::vector<double> current_pos_std(current_pos.rows());
     for(int i = 0; i < current_pos.rows(); i++){
         // std::cout << current_pos[i] << " ";
-        current_pos_std[i] = current_pos[i]/M_PI_2; //scale the joint positions to [-1,1]
+        current_pos_std[i] = current_pos[i]/M_PI_2 + _rand_num->normal_dist(0,input_noise); //scale the joint positions to [-1,1]
     }
     // std::cout << std::endl;
     std::vector<double> next_pos_std = ind->get_control()->update(current_pos_std);
     rd::VectorX next_pos(next_pos_std.size());
     for(size_t i = 0; i < next_pos_std.size(); i++)
-        next_pos[i] = next_pos_std[i]*M_PI/2; //scale the control output to [-pi/2,pi/2]
+        next_pos[i] = next_pos_std[i]*M_PI/2 + _rand_num->normal_dist(0,output_noise); //scale the control output to [-pi/2,pi/2]
     _sim->setJointTargetPositions(_robot_idx,next_pos);
     return true;
 }

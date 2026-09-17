@@ -26,7 +26,7 @@ bool Exploration::update(RoboGrammarSimulator &sim){
     // std::cout << "robot position: " << position.transpose() << std::endl;
 
     std::pair<int,int> idx = real_to_matrix_coord(position);
-    if(idx.first < 0 || idx.first >= grid_size[0] || idx.second < 0 || idx.second >= grid_size[1] || position[1] < 0){
+    if(idx.first < 0 || idx.first >= grid_size[0] || idx.second < 0 || idx.second >= grid_size[1] || position[1] < -0.01){
         if(verbose)
             std::cout << "robot out of bounds with position " << position.transpose() << std::endl;
         return false;
@@ -73,7 +73,6 @@ void FlatArena::init(Sim &sim){
     rd::Prop wall2(rd::PropShape::BOX,0,0.5,{_width,0.5,0.0});
     sim.sim()->addProp(std::make_shared<rd::Prop>(wall2),{0,0.5,_length},{1.0,0.0,0.0,0.0});
     sim.sim()->addProp(std::make_shared<rd::Prop>(wall2),{0,0.5,-_length},{1.0,0.0,0.0,0.0});
-
 }
 
 

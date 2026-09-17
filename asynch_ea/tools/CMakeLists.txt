@@ -8,3 +8,8 @@ target_include_directories(view_robot PUBLIC ../include/)
 add_executable(view_behavior view_behavior.cpp)
 target_link_libraries(view_behavior PUBLIC ea_rg)
 target_include_directories(view_behavior PUBLIC ../include/)
+
+
+add_executable(view_environment view_environment.cpp)
+target_link_libraries(view_environment PUBLIC ea_rg)
+target_include_directories(view_environment PUBLIC ../include/)

@@ -55,7 +55,7 @@ int main(int argc, char** argv){
     RandomInd::Ptr ind = std::make_shared<RandomInd>(rand_num,param);
     ind->init();
 
-    ea_rg::RoboGrammarSimulator sim(param,false);
+    ea_rg::RoboGrammarSimulator sim(param,rand_num,false);
     env.init(sim);
     sim.init(ind);
     while(sim.step()){}

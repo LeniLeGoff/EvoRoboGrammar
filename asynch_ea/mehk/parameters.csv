@@ -2,10 +2,10 @@
 #seed,int,-1
 #verbose,bool,1
 
-#simTimeStep,double,0.05
+#simTimeStep,double,0.02
 #maxEpisodeTime,double,1200
-#initPosition,sequence_double,0;0.5;0
-#initOrientation,sequence_double,1;0;0;0
+#initPosition,sequence_double,0;0.1;0
+#initOrientation,sequence_double,0;0;1;0
 #evaluationOrder,int,0
 
 #populationSize,int,100
@@ -19,6 +19,9 @@
 #probPrune,double,0
 #probSwap,double,0.5
 #tournamentSize,int,4
+
+#inputNoiseStrength,double,0.1
+#outputNoiseStrength,double,0.1
 
 #arenaSize,sequence_double,4;4
 #gridSize,sequence_int,16;16
