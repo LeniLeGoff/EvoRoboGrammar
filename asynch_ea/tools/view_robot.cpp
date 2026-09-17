@@ -69,7 +69,7 @@ int main(int argc, char** argv){
     ViewInd::Ptr ind = std::make_shared<ViewInd>(apear::misc::RandNum::Ptr(),parameters);
     ind->init();
     ind->set_rules(rule_seq);
-    ea_rg::RoboGrammarSimulator sim(parameters,false);
+    ea_rg::RoboGrammarSimulator sim(parameters,apear::misc::RandNum::Ptr(),false);
     env.init(sim);
     sim.init(ind);
     while(sim.step()){}

@@ -96,15 +96,13 @@ int main(int argc, char** argv){
     ind->set_parameters(parameters);
 
 
-    ea_rg::RoboGrammarSimulator sim(parameters,false);
+    ea_rg::RoboGrammarSimulator sim(parameters,apear::misc::RandNum::Ptr(),false);
     env.init(sim);
     sim.init(ind);
     int dof = sim.sim()->getRobotDofCount(sim.get_robot_idx());
     rd::VectorX torques(dof);
     while(sim.step()){
         sim.update_robot(ind);
-        sim.sim()->getJointTorques(sim.get_robot_idx(),torques);
-        std::cout << "torques: " << torques.transpose() << std::endl;
     }
 
 
