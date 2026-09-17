@@ -28,7 +28,7 @@ struct NodeAttributes {
   LinkShape shape_ = LinkShape::NONE;
   Scalar length_ = 1.0;
   Scalar radius_ = 0.05;
-  Scalar density_ = 1.0;
+  Scalar density_ = 3.0;
   Scalar friction_ = 0.9;
   bool base_ = false;
   Color color_ = {0.45f, 0.5f, 0.55f}; // Slate gray
@@ -68,7 +68,7 @@ struct EdgeAttributes {
   Vector3 joint_axis_ = Vector3::UnitZ();
   Scalar joint_kp_ = 0.01;
   Scalar joint_kd_ = 0.5;
-  Scalar joint_torque_ = 1.0;
+  Scalar joint_torque_ = 2.0;
   Scalar joint_lower_limit_ = 0.0;
   Scalar joint_upper_limit_ = 0.0;
   JointControlMode joint_control_mode_ = JointControlMode::POSITION;

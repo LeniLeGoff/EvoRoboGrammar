@@ -230,6 +230,10 @@ void GLRenderer::drawOpaque(const Simulation &sim, const Program &program,
       drawBox(prop_transform.cast<float>(), prop.half_extents_.cast<float>(),
               program, program_state);
       break;
+    case PropShape::CAPSULE:
+        drawCapsule(prop_transform.cast<float>(), prop.half_extents_[2],
+                    prop.half_extents_[0], program, program_state);
+        break;
     case PropShape::HEIGHTFIELD: {
       const MatrixX &heightfield =
           dynamic_cast<const HeightfieldProp &>(prop).heightfield_;

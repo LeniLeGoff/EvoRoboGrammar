@@ -4,7 +4,7 @@
 
 namespace robot_design {
 
-enum class PropShape : Index { BOX, HEIGHTFIELD };
+enum class PropShape : Index { BOX, CAPSULE, HEIGHTFIELD };
 
 struct Prop {
   Prop() = default;
@@ -17,7 +17,7 @@ struct Prop {
   // Shape
   PropShape shape_ = PropShape::BOX;
   // Density
-  Scalar density_ = 0.0;
+  Scalar density_ = 100.0;
   // Friction
   Scalar friction_ = 0.9;
   // Half extents (size)

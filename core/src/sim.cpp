@@ -23,6 +23,8 @@ BulletSimulation::BulletSimulation(Scalar time_step) : time_step_(time_step) {
       collision_config_.get());
   world_->setGravity(btVector3(0, -9.81, 0));
   world_->getDispatchInfo().m_deterministicOverlappingPairs = true;
+  world_->getSolverInfo().m_numIterations = 300;
+  world_->getSolverInfo().m_linearSlop = 0.0001;
 }
 
 BulletSimulation::~BulletSimulation() {
@@ -113,6 +115,7 @@ Index BulletSimulation::addRobot(std::shared_ptr<const Robot> robot,
   wrapper.multi_body_->setAngularDamping(0.0);
   wrapper.multi_body_->clearForcesAndTorques();
   wrapper.multi_body_->clearVelocities();
+  wrapper.multi_body_->clearConstraintForces();
 
   int dof_count = wrapper.multi_body_->getNumDofs();
   wrapper.joint_kp_.resize(dof_count);
@@ -190,6 +193,13 @@ Index BulletSimulation::addProp(std::shared_ptr<const Prop> prop,
         bulletVector3FromEigen(prop->half_extents_));
     mass = 8 * prop->half_extents_.prod() * prop->density_;
     break;
+  case PropShape::CAPSULE:
+    wrapper.col_shape_ = std::make_shared<btCapsuleShapeX>(
+        prop->half_extents_[0], prop->half_extents_[2]);
+      mass = M_PI * prop->half_extents_[0] * prop->half_extents_[0] *
+             (2 * prop->half_extents_[2] + 4.0 / 3.0 * prop->half_extents_[0]) *
+             prop->density_;
+      break;
   case PropShape::HEIGHTFIELD: {
     const HeightfieldProp &heightfield_prop =
         dynamic_cast<const HeightfieldProp &>(*prop);
@@ -227,6 +237,10 @@ Index BulletSimulation::addProp(std::shared_ptr<const Prop> prop,
       /*q=*/bulletQuaternionFromEigen(rot),
       /*c=*/bulletVector3FromEigen(pos)));
   wrapper.rigid_body_->setActivationState(DISABLE_DEACTIVATION);
+  wrapper.rigid_body_->setRollingFriction(1.0);
+  wrapper.rigid_body_->setSpinningFriction(1.0);
+  wrapper.rigid_body_->setDamping(1.0,1.0);
+  wrapper.rigid_body_->setActivationState(4);
   world_->addRigidBody(wrapper.rigid_body_.get(),
                        /*collisionFilterGroup=*/2,
                        /*collisionFilterMask=*/3);
