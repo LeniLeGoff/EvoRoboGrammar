@@ -74,15 +74,21 @@ bool RoboGrammarSimulator::update_robot(const IndPtr &ind){
     rd::VectorX current_pos(dof);
     _sim->getJointPositions(_robot_idx,current_pos);
     std::vector<double> current_pos_std(current_pos.rows());
+    std::cout << "input : ";
     for(int i = 0; i < current_pos.rows(); i++){
-        // std::cout << current_pos[i] << " ";
+
         current_pos_std[i] = current_pos[i]/M_PI_2 + _rand_num->normal_dist(0,input_noise); //scale the joint positions to [-1,1]
+        std::cout << current_pos_std[i] << ",";
     }
-    // std::cout << std::endl;
+    std::cout << std::endl;
     std::vector<double> next_pos_std = ind->get_control()->update(current_pos_std);
     rd::VectorX next_pos(next_pos_std.size());
-    for(size_t i = 0; i < next_pos_std.size(); i++)
+    std::cout << "output : ";
+    for(size_t i = 0; i < next_pos_std.size(); i++){
+        std::cout << next_pos_std[i] << ",";
         next_pos[i] = next_pos_std[i]*M_PI/2 + _rand_num->normal_dist(0,output_noise); //scale the control output to [-pi/2,pi/2]
+    }
+    std::cout << std::endl;
     _sim->setJointTargetPositions(_robot_idx,next_pos);
     return true;
 }

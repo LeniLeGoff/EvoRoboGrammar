@@ -68,7 +68,7 @@ struct EdgeAttributes {
   Vector3 joint_axis_ = Vector3::UnitZ();
   Scalar joint_kp_ = 0.01;
   Scalar joint_kd_ = 0.5;
-  Scalar joint_torque_ = 2.0;
+  Scalar joint_torque_ = 5.0;
   Scalar joint_lower_limit_ = 0.0;
   Scalar joint_upper_limit_ = 0.0;
   JointControlMode joint_control_mode_ = JointControlMode::POSITION;

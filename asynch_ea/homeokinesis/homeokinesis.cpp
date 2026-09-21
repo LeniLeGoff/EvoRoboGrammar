@@ -1,5 +1,6 @@
 #include "homeokinesis.hpp"
 #include "apear/algorithms/cpgrbfhk_controller.hpp"
+#include "apear/algorithms/homeokinetic_controller.hpp"
 #include "apear/settings.hpp"
 #include "apear/misc/rand_num.hpp"
 #include "ea_rg/tasks.hpp"
@@ -15,12 +16,13 @@ void HKInd::_create_controller(){
     int dof = get_robot_dof();
     if(dof == 0)
         return;
-    _control = std::make_shared<apear::hk::CPGRBFHK>(dof);
+    _control = std::make_shared<apear::hk::Homeokinesis>(dof,dof);
     _control->set_random_number(_rand_num);
     _control->set_parameters(_parameters);
+    std::dynamic_pointer_cast<apear::hk::Homeokinesis>(_control)->init();
 
     if(apear::settings::getParameter<apear::settings::Boolean>(_parameters,"#initHKNoise").value)
-        std::dynamic_pointer_cast<apear::hk::CPGRBFHK>(_control)->add_noise(
+        std::dynamic_pointer_cast<apear::hk::Homeokinesis>(_control)->add_noise(
             apear::settings::getParameter<apear::settings::Double>(_parameters,"#HKNoiseStrength").value);
 }
 
@@ -69,8 +71,13 @@ int main(int argc, char** argv){
     ea_rg::RoboGrammarSimulator sim(parameters,rand_num,false);
     env.init(sim);
     sim.init(ind);
+    double ctrl_freq = settings::getParameter<settings::Double>(parameters,"#ctrlFreq").value;
+    double time_step = settings::getParameter<settings::Double>(parameters,"#simTimeStep").value;
     while(sim.step()){
-        sim.update_robot(ind);
+        int step_counter = static_cast<int>(std::round(sim.time()/time_step));
+        int ctrl_step  = static_cast<int>(std::round(ctrl_freq/time_step));
+        if(step_counter%ctrl_step == 0)
+            sim.update_robot(ind);
     }
 
 
