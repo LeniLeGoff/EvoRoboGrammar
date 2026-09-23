@@ -237,7 +237,7 @@ Index BulletSimulation::addProp(std::shared_ptr<const Prop> prop,
       /*q=*/bulletQuaternionFromEigen(rot),
       /*c=*/bulletVector3FromEigen(pos)));
   wrapper.rigid_body_->setActivationState(DISABLE_DEACTIVATION);
-  wrapper.rigid_body_->setRollingFriction(1.0);
+  wrapper.rigid_body_->setRollingFriction(0);
   wrapper.rigid_body_->setSpinningFriction(1.0);
   wrapper.rigid_body_->setDamping(1.0,1.0);
   wrapper.rigid_body_->setActivationState(4);

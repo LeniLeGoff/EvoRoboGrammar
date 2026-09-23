@@ -66,7 +66,7 @@ struct EdgeAttributes {
   Scalar joint_pos_ = 1.0;
   Quaternion joint_rot_ = Quaternion::Identity();
   Vector3 joint_axis_ = Vector3::UnitZ();
-  Scalar joint_kp_ = 0.01;
+  Scalar joint_kp_ = 0.05;
   Scalar joint_kd_ = 0.5;
   Scalar joint_torque_ = 5.0;
   Scalar joint_lower_limit_ = 0.0;

@@ -70,6 +70,9 @@ bool RoboGrammarSimulator::update_robot(const IndPtr &ind){
     }
     double input_noise = apear_st::getParameter<apear_st::Double>(_parameters,"#inputNoiseStrength").value;
     double output_noise = apear_st::getParameter<apear_st::Double>(_parameters,"#outputNoiseStrength").value;
+    rd::Vector3 position;
+    rd::Quaternion rotation;
+    _sim->getRobotPositionAndOrientation(_robot_idx,position,rotation);
     int dof = _sim->getRobotDofCount(_robot_idx);
     rd::VectorX current_pos(dof);
     _sim->getJointPositions(_robot_idx,current_pos);
@@ -81,7 +84,17 @@ bool RoboGrammarSimulator::update_robot(const IndPtr &ind){
         std::cout << current_pos_std[i] << ",";
     }
     std::cout << std::endl;
-    std::vector<double> next_pos_std = ind->get_control()->update(current_pos_std);
+
+    std::vector<double> inputs = current_pos_std;
+    inputs.push_back(position[0] +  _rand_num->normal_dist(0,input_noise));
+    inputs.push_back(position[1] +  _rand_num->normal_dist(0,input_noise));
+    inputs.push_back(position[2] +  _rand_num->normal_dist(0,input_noise));
+    inputs.push_back(rotation.x() + _rand_num->normal_dist(0,input_noise));
+    inputs.push_back(rotation.y() + _rand_num->normal_dist(0,input_noise));
+    inputs.push_back(rotation.z() + _rand_num->normal_dist(0,input_noise));
+    inputs.push_back(rotation.w() + _rand_num->normal_dist(0,input_noise));
+
+    std::vector<double> next_pos_std = ind->get_control()->update(inputs);
     rd::VectorX next_pos(next_pos_std.size());
     std::cout << "output : ";
     for(size_t i = 0; i < next_pos_std.size(); i++){

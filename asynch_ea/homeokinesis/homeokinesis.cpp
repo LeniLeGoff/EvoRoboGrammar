@@ -16,14 +16,26 @@ void HKInd::_create_controller(){
     int dof = get_robot_dof();
     if(dof == 0)
         return;
-    _control = std::make_shared<apear::hk::Homeokinesis>(dof,dof);
-    _control->set_random_number(_rand_num);
-    _control->set_parameters(_parameters);
-    std::dynamic_pointer_cast<apear::hk::Homeokinesis>(_control)->init();
+    int hk_type = settings::getParameter<settings::Integer>(_parameters,"#HKType").value;
+    if(hk_type == HKType::HK){
+        _control = std::make_shared<apear::hk::Homeokinesis>(dof+7,dof);
+        _control->set_random_number(_rand_num);
+        _control->set_parameters(_parameters);
+        std::dynamic_pointer_cast<apear::hk::Homeokinesis>(_control)->init();
+        if(apear::settings::getParameter<apear::settings::Boolean>(_parameters,"#initHKNoise").value)
+            std::dynamic_pointer_cast<apear::hk::Homeokinesis>(_control)->add_noise(
+                apear::settings::getParameter<apear::settings::Double>(_parameters,"#HKNoiseStrength").value);
+    }else if(hk_type == HKType::CPGRBFHK){
+        _control = std::make_shared<apear::hk::CPGRBFHK>(dof);
+        _control->set_random_number(_rand_num);
+        _control->set_parameters(_parameters);
+        std::dynamic_pointer_cast<apear::hk::CPGRBFHK>(_control)->init();
+        if(apear::settings::getParameter<apear::settings::Boolean>(_parameters,"#initHKNoise").value)
+            std::dynamic_pointer_cast<apear::hk::CPGRBFHK>(_control)->add_noise(
+                apear::settings::getParameter<apear::settings::Double>(_parameters,"#HKNoiseStrength").value);
+    }
 
-    if(apear::settings::getParameter<apear::settings::Boolean>(_parameters,"#initHKNoise").value)
-        std::dynamic_pointer_cast<apear::hk::Homeokinesis>(_control)->add_noise(
-            apear::settings::getParameter<apear::settings::Double>(_parameters,"#HKNoiseStrength").value);
+
 }
 
 

@@ -2,6 +2,11 @@
 
 using namespace ea_rg;
 
+enum HKType{
+    HK = 0,
+    CPGRBFHK
+};
+
 class HKInd : public RoboGrammarInd{
 public:
     using Ptr = std::shared_ptr<HKInd>;
