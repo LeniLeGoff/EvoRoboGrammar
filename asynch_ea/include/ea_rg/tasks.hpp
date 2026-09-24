@@ -40,6 +40,29 @@ struct Exploration: public Function{
     double cell_size;
     bool verbose = false;
 };
+
+struct MovementExploStability: public Function{
+    using Ptr = std::shared_ptr<Exploration>;
+    using ConstPtr = std::shared_ptr<const Exploration>;
+
+    MovementExploStability(const apear::settings::ParametersMapPtr& param);
+
+    std::vector<double> operator()(RoboGrammarSimulator &) override;
+    bool update(RoboGrammarSimulator&) override;
+    void compute_stability_score();
+    void compute_exploration_score();
+    std::vector<Eigen::VectorXd> poses_archive;
+    std::vector<double> explo_scores;
+    std::vector<double> stab_scores;
+    int time_step = 0;
+    bool verbose = false;
+private:
+    double stability_reward;
+    double stability_threshold;
+    int nbr_nearest_neighbours;
+    double x_norm,y_norm;
+};
+
 }//fitness
 
 using obj_fcts_t = std::function<std::vector<double>()>;

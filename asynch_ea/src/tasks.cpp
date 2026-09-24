@@ -47,6 +47,76 @@ std::pair<int,int> Exploration::real_to_matrix_coord(const rd::Vector3& pos){
     return indexes;
 }
 
+MovementExploStability::MovementExploStability(const apear_st::ParametersMapPtr &param){
+    stability_threshold = apear_st::getParameter<apear_st::Double>(param,"#stabilityThreshold").value;
+    stability_reward = apear_st::getParameter<apear_st::Double>(param,"#stabilityReward").value;
+    nbr_nearest_neighbours = apear_st::getParameter<apear_st::Integer>(param,"#nbrNearestNeighbours").value;
+    x_norm = apear_st::getParameter<apear_st::Sequence<double>>(param,"#arenaSize").value[0];
+    y_norm = apear_st::getParameter<apear_st::Sequence<double>>(param,"#arenaSize").value[1];
+}
+
+std::vector<double> MovementExploStability::operator()(RoboGrammarSimulator &sim){
+    if(time_step == 0)
+        return {0};
+    double explo_score = 0;
+    for(const double& score: explo_scores)
+        explo_score += score;
+    double stab_score = 0;
+    for(const double& score: stab_scores)
+        stab_score += score;
+    double obj = explo_score + stab_score/time_step;
+    stab_scores.clear();
+    explo_scores.clear();
+    poses_archive.clear();
+    time_step = 0;
+    return {obj};
+}
+
+
+bool MovementExploStability::update(RoboGrammarSimulator &sim){
+    rd::Vector3 position;
+    rd::Quaternion orientation;
+    sim.sim()->getRobotPositionAndOrientation(sim.get_robot_idx(),position,orientation);
+    Eigen::VectorXd pose(7);
+    pose << position[0]/x_norm,position[1],position[2]/y_norm,
+        orientation.x(),orientation.y(),orientation.z(),orientation.w();
+    poses_archive.push_back(pose);
+
+    time_step = poses_archive.size()-1;
+
+    //compute stability score
+    if(poses_archive.size() == 1)
+        return true;
+
+    compute_exploration_score();
+    compute_stability_score();
+    return true;
+}
+
+void MovementExploStability::compute_stability_score(){
+    if((poses_archive[time_step-1].tail(4)-poses_archive[time_step].tail(4)).norm() < stability_threshold)
+        stab_scores.push_back(stability_reward);
+    else stab_scores.push_back(0);
+}
+
+void MovementExploStability::compute_exploration_score(){
+    std::vector<Eigen::VectorXd> poses_archive_copy = poses_archive;
+    poses_archive_copy.pop_back();
+    std::vector<double> distances;
+    for(const Eigen::VectorXd& pose: poses_archive_copy){
+        distances.push_back((pose-poses_archive.back()).norm());
+    }
+    std::sort(distances.begin(),distances.end());
+    double score = 0;
+    for(int i = 0; i < nbr_nearest_neighbours; i++){
+        if(static_cast<size_t>(i) >= distances.size())
+            break;
+        score += distances[i];
+    }
+    explo_scores.push_back(score/static_cast<double>(nbr_nearest_neighbours));
+}
+
+
 void FlatTerrain::init(Sim &sim){
 
     rd::Prop floor(rd::PropShape::BOX, 0, 0.5, {40.0,1.0,10.0});

@@ -17,9 +17,10 @@ void MEHKInd::_create_controller(){
     int dof = get_robot_dof();
     if(dof == 0)
         return;
-    _control = std::make_shared<apear::hk::Homeokinesis>(dof,dof);
+    _control = std::make_shared<apear::hk::Homeokinesis>(dof+7,dof);
     _control->set_random_number(_rand_num);
     _control->set_parameters(_parameters);
+    std::dynamic_pointer_cast<apear::hk::Homeokinesis>(_control)->init();
 
     if(apear_st::getParameter<apear_st::Boolean>(_parameters,"#initHKNoise").value)
         std::dynamic_pointer_cast<apear::hk::Homeokinesis>(_control)->add_noise(
@@ -79,7 +80,7 @@ int main(int argc, char** argv){
     //define the environment and task
     std::vector<double> arena_size = apear_st::getParameter<apear_st::Sequence<double>>(param,"#arenaSize").value;
 
-    dealer.set_environment<ea_rg::FlatArena>(arena_size[0],arena_size[1],ea_rg::fitness::Exploration(param));
+    dealer.set_environment<ea_rg::FlatArena>(arena_size[0],arena_size[1],ea_rg::fitness::MovementExploStability(param));
 
     apear_st::saveParameters(apear::logging::log_folder + "/parameters.csv",param);
 

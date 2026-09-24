@@ -60,19 +60,29 @@ private:
 };
 
 int main(int argc, char** argv){
-    if(argc == 1){
-        std::cout << "usage: \n\targ1 : grammar file" << std::endl
-                  << "\targ2: time step" << std::endl
-                  << "\targ3: rollout file (csv)" << std::endl
-                  << "\targs: rule sequence" << std::endl;
+    if(argc <= 3){
+        std::cout << "usage: \n\targ1 : parameters file (csv)" << std::endl
+                  << "\targ2 : rollout file (csv)" << std::endl
+                  << "\targs : rule sequence" << std::endl;
         return 1;
     }
-    apear::settings::ParametersMapPtr parameters = std::make_shared<apear::settings::ParametersMap>();
-    parameters->emplace("#grammarFile",std::make_shared<apear::settings::String>(std::string(argv[1])));
-    parameters->emplace("#simTimeStep",std::make_shared<apear::settings::Double>(std::stod(argv[2])));
+
+
+    apear::settings::ParametersMapPtr parameters = std::make_shared<apear::settings::ParametersMap>(
+        apear::settings::loadParameters(argv[1]));
+
+
+    int seed = apear::settings::getParameter<apear::settings::Integer>(parameters,"#seed").value;
+    if(seed == -1){
+        std::random_device rd;
+        seed = rd();
+        apear::settings::random::parameters->emplace("#seed",std::make_shared<const apear::settings::Integer>(seed));
+    }
+    apear::misc::RandNum::Ptr rand_num = std::make_shared<apear::misc::RandNum>(seed);
+
     // parameters->emplace("#initPosition",std::make_shared<apear::settings::Sequence<double>>(std::vector<double>({0,10,0})));
     std::vector<RoboGrammarGenome::rule_idx_t> rule_seq;
-    for(int i = 4; i < argc; i++){
+    for(int i = 3; i < argc; i++){
         std::string arg(argv[i]);
         std::vector<std::string> tokens;
         apear::misc::split_line(arg,",",tokens);
@@ -85,18 +95,19 @@ int main(int argc, char** argv){
         rule_seq.push_back(std::make_pair(rule_type,rule_idx));
     }
 
+    std::vector<double> arena_size = apear::settings::getParameter<apear::settings::Sequence<double>>(parameters,"#arenaSize").value;
+    ea_rg::FlatArena env(arena_size[0],arena_size[1],ea_rg::fitness::Dummy());
 
-    ea_rg::FlatArena env(4,4,ea_rg::fitness::Dummy());
-
-    ViewInd::Ptr ind = std::make_shared<ViewInd>(apear::misc::RandNum::Ptr(),parameters);
+    ViewInd::Ptr ind = std::make_shared<ViewInd>(rand_num,parameters);
     ind->init();
     ind->set_rules(rule_seq);
-    int nbr_of_step = ind->load_rollout(std::string(argv[3]));
-    parameters->emplace("#maxEpisodeTime",std::make_shared<apear::settings::Double>(nbr_of_step * std::stod(argv[2])));
+    int nbr_of_step = ind->load_rollout(std::string(argv[2]));
+    double time_step = apear::settings::getParameter<apear::settings::Double>(parameters,"#simTimeStep").value;
+    parameters->emplace("#maxEpisodeTime",std::make_shared<apear::settings::Double>(nbr_of_step * time_step));
     ind->set_parameters(parameters);
 
 
-    ea_rg::RoboGrammarSimulator sim(parameters,apear::misc::RandNum::Ptr(),false);
+    ea_rg::RoboGrammarSimulator sim(parameters,rand_num,false);
     env.init(sim);
     sim.init(ind);
     int dof = sim.sim()->getRobotDofCount(sim.get_robot_idx());
