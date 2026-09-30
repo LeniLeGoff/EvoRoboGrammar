@@ -3,9 +3,9 @@ cmake_minimum_required(VERSION 3.0)
 set(CMAKE_CXX_STANDARD 17)
 
 set(LIBRARY_NAME pyrobotdesign)
-
-set(PYBIND11_ROOT ${PROJECT_SOURCE_DIR}/extern/pybind11)
-add_subdirectory(${PYBIND11_ROOT} ${CMAKE_BINARY_DIR}/pybind11)
+find_package(pybind11)
+#set(PYBIND11_ROOT ${PROJECT_SOURCE_DIR}/extern/pybind11)
+#add_subdirectory(${PYBIND11_ROOT} ${CMAKE_BINARY_DIR}/pybind11)
 pybind11_add_module(${LIBRARY_NAME}
     py_eigen_geometry.cpp
     py_graph.cpp

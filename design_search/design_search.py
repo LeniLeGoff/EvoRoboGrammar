@@ -2,15 +2,19 @@ import argparse
 import ast
 import csv
 import datetime
-import env
-import mcts
 import numpy as np
 import os
 import pyrobotdesign as rd
 import random
 import signal
 import sys
-import tasks
+
+if __package__:
+  from . import env, mcts, tasks
+else:
+  import env
+  import mcts
+  import tasks
 
 def get_applicable_matches(rule, graph):
   """Generates all applicable matches for rule in graph."""
