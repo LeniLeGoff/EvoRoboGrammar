@@ -1,9 +1,10 @@
 #include <string>
+#include <fstream>
 #include "ea_rg/rg_simulator.hpp"
 #include "ea_rg/rg_controllers.hpp"
 #include "ea_rg/tasks.hpp"
-#include "apear/async_dealer.hpp"
 #include "apear/misc/utilities.hpp"
+#include "ea_rg/io.hpp"
 
 
 using namespace ea_rg;
@@ -59,6 +60,7 @@ private:
 
 };
 
+
 int main(int argc, char** argv){
     if(argc <= 3){
         std::cout << "usage: \n\targ1 : parameters file (csv)" << std::endl
@@ -71,7 +73,8 @@ int main(int argc, char** argv){
     apear::settings::ParametersMapPtr parameters = std::make_shared<apear::settings::ParametersMap>(
         apear::settings::loadParameters(argv[1]));
 
-
+    apear::settings::setParameter(parameters,"#outputNoiseStrength",std::make_shared<const apear::settings::Double>(0.0));
+    apear::settings::setParameter(parameters,"#inputNoiseStrength",std::make_shared<const apear::settings::Double>(0.0));
     int seed = apear::settings::getParameter<apear::settings::Integer>(parameters,"#seed").value;
     if(seed == -1){
         std::random_device rd;
@@ -103,7 +106,8 @@ int main(int argc, char** argv){
     ind->set_rules(rule_seq);
     int nbr_of_step = ind->load_rollout(std::string(argv[2]));
     double time_step = apear::settings::getParameter<apear::settings::Double>(parameters,"#simTimeStep").value;
-    parameters->emplace("#maxEpisodeTime",std::make_shared<apear::settings::Double>(nbr_of_step * time_step));
+    apear::settings::setParameter(parameters,"#maxEpisodeTime",std::make_shared<apear::settings::Double>(nbr_of_step * time_step));
+    apear::settings::setParameter(parameters,"#ctrlFreq",std::make_shared<const apear::settings::Double>(time_step));
     ind->set_parameters(parameters);
 
 
@@ -112,9 +116,11 @@ int main(int argc, char** argv){
     sim.init(ind);
     int dof = sim.sim()->getRobotDofCount(sim.get_robot_idx());
     rd::VectorX torques(dof);
-    while(sim.step()){
+    do{
         sim.update_robot(ind);
-    }
+        print::rollout(sim);
+        print::pose(sim);
+    }while(sim.step());
 
 
     return 0;

@@ -68,6 +68,12 @@ bool RoboGrammarSimulator::update_robot(const IndPtr &ind){
             std::cout << "No controller for this individual" << std::endl;
         return false;
     }
+    double ctrl_freq = apear_st::getParameter<apear_st::Double>(_parameters,"#ctrlFreq").value;
+    double time_step = apear_st::getParameter<apear_st::Double>(_parameters,"#simTimeStep").value;
+    int step_counter = static_cast<int>(std::round(time()/time_step));
+    int ctrl_step  = static_cast<int>(std::round(ctrl_freq/time_step));
+    if(step_counter%ctrl_step != 0)
+        return true;
     double input_noise = apear_st::getParameter<apear_st::Double>(_parameters,"#inputNoiseStrength").value;
     double output_noise = apear_st::getParameter<apear_st::Double>(_parameters,"#outputNoiseStrength").value;
     rd::Vector3 position;
@@ -96,7 +102,7 @@ bool RoboGrammarSimulator::update_robot(const IndPtr &ind){
     std::vector<double> next_pos_std = ind->get_control()->update(inputs);
     rd::VectorX next_pos(next_pos_std.size());
     for(size_t i = 0; i < next_pos_std.size(); i++){
-        next_pos[i] = next_pos_std[i]*M_PI/2 + _rand_num->normal_dist(0,output_noise); //scale the control output to [-pi/2,pi/2]
+        next_pos[i] = next_pos_std[i]*M_PI_2 + _rand_num->normal_dist(0,output_noise); //scale the control output to [-pi/2,pi/2]
     }
     _sim->setJointTargetPositions(_robot_idx,next_pos);
     return true;

@@ -4,6 +4,7 @@
 #include "apear/settings.hpp"
 #include "apear/misc/rand_num.hpp"
 #include "ea_rg/tasks.hpp"
+#include "ea_rg/io.hpp"
 
 using namespace apear;
 
@@ -74,8 +75,8 @@ int main(int argc, char** argv){
     }
 
 
-
-    ea_rg::FlatArena env(2,2,ea_rg::fitness::Dummy());
+    std::vector<double> arena_size = settings::getParameter<settings::Sequence<double>>(parameters,"#arenaSize").value;
+    ea_rg::FlatArena env(arena_size[0],arena_size[1],ea_rg::fitness::Dummy());
 
     HKInd::Ptr ind = std::make_shared<HKInd>(rand_num,parameters);
     ind->init();
@@ -83,14 +84,11 @@ int main(int argc, char** argv){
     ea_rg::RoboGrammarSimulator sim(parameters,rand_num,false);
     env.init(sim);
     sim.init(ind);
-    double ctrl_freq = settings::getParameter<settings::Double>(parameters,"#ctrlFreq").value;
-    double time_step = settings::getParameter<settings::Double>(parameters,"#simTimeStep").value;
-    while(sim.step()){
-        int step_counter = static_cast<int>(std::round(sim.time()/time_step));
-        int ctrl_step  = static_cast<int>(std::round(ctrl_freq/time_step));
-        if(step_counter%ctrl_step == 0)
-            sim.update_robot(ind);
-    }
+    do{
+        sim.update_robot(ind);
+        print::rollout(sim);
+        // print::pose(sim);
+    }while(sim.step());
 
 
     return 0;
