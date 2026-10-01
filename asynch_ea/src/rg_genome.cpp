@@ -26,12 +26,17 @@ void RoboGrammarGenome::init(){
 void RoboGrammarGenome::random(){
     int rule_seq_init_size = apear_st::getParameter<apear_st::Integer>(_parameters,"#ruleSeqInitSize").value;
     int rnd_size = _rand_num->rand_int(0,rule_seq_init_size);
-    for(int i = 0; i < rnd_size; ++i){
+    while(_rule_seq.size() <= static_cast<size_t>(rnd_size)){
         _grow_graph();
+        while(has_nonterminals(_graph)){
+            _close_graph();
+        }
     }
+
     while(has_nonterminals(_graph)){
         _close_graph();
     }
+
 }
 
 void RoboGrammarGenome::mutate(){
@@ -39,20 +44,30 @@ void RoboGrammarGenome::mutate(){
     double rnd = _rand_num->rand_double(0.0,1.0);
     if(rnd > mut_rate)
         return;
-
-    double prob_grow = apear_st::getParameter<apear_st::Double>(_parameters,"#probGrow").value;
-    double prob_prune = apear_st::getParameter<apear_st::Double>(_parameters,"#probPrune").value;
     double prob_swap = apear_st::getParameter<apear_st::Double>(_parameters,"#probSwap").value;
+    double prob_prune = apear_st::getParameter<apear_st::Double>(_parameters,"#probPrune").value + prob_swap;
+    double prob_grow = apear_st::getParameter<apear_st::Double>(_parameters,"#probGrow").value + prob_prune;
     double rule_seq_max_size = apear_st::getParameter<apear_st::Integer>(_parameters,"#ruleSeqMaxSize").value;
     rnd = _rand_num->rand_double(0.0,1.0);
-    if(rnd < prob_swap)
-        _swap_rule();
-    rnd = _rand_num->rand_double(0.0,1.0);
-    if(rnd < prob_prune && _rule_seq.size() > 1)
-        _prune_graph();
-    rnd = _rand_num->rand_double(0.0,1.0);
-    if(rnd < prob_grow && _rule_seq.size() < rule_seq_max_size)
+    if(_rule_seq.size() == 1)
         _grow_graph();
+    else if(_rule_seq.size() == rule_seq_max_size)
+    {
+        prob_swap /= (prob_swap + prob_prune);
+        prob_prune /= (prob_swap + prob_prune);
+        if(rnd <= prob_swap)
+            _swap_rule();
+        else if(rnd > prob_swap && rnd <= prob_prune)
+            _prune_graph();
+    }else{
+        if(rnd <= prob_swap)
+            _swap_rule();
+        else if(rnd > prob_swap && rnd <= prob_prune && _rule_seq.size() > 1)
+            _prune_graph();
+        else if(rnd > prob_prune && rnd <= prob_grow && _rule_seq.size() < rule_seq_max_size)
+            _grow_graph();
+    }
+
     while(has_nonterminals(_graph)){
         _close_graph();
     }
