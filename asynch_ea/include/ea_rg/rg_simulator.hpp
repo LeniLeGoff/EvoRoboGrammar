@@ -22,7 +22,7 @@ public:
     bool init(const IndPtr &ind) override;
     bool step() override;
     bool stop() override;
-    bool update_robot(const IndPtr &ind) override;
+    bool update_robot(const IndPtr &ind, bool normalized = true) override;
     apear::sim_state_t state() override;
     double time() const override;
     void reconnect() override;

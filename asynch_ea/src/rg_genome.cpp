@@ -291,6 +291,11 @@ int RoboGrammarInd::get_robot_dof() const{
     return dof;
 }
 
+void RoboGrammarInd::set_rules(const std::vector<RoboGrammarGenome::rule_idx_t> &rule_seq){
+    std::dynamic_pointer_cast<RoboGrammarGenome>(_morph_genome)->set_rule_seq(rule_seq);
+    std::dynamic_pointer_cast<RoboGrammarGenome>(_morph_genome)->make_graph();
+}
+
 void RoboGrammarInd::_create_morphology(){
     _robot = rd::buildRobot(std::static_pointer_cast<RoboGrammarGenome>(_morph_genome)->get_graph());
 }

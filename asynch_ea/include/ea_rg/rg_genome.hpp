@@ -99,6 +99,7 @@ public:
 
     int get_robot_dof() const;
     const rd::Robot &get_robot() const{return _robot;}
+    void set_rules(const std::vector<RoboGrammarGenome::rule_idx_t> &rule_seq);
 protected:
     void _create_morphology() override;
     rd::Robot _robot;

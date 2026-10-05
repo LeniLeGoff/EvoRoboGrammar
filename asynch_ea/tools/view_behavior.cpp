@@ -33,10 +33,6 @@ public:
     void init() override{
         _morph_genome->init();
     }
-    void set_rules(const std::vector<RoboGrammarGenome::rule_idx_t> &rule_seq){
-        std::dynamic_pointer_cast<RoboGrammarGenome>(_morph_genome)->set_rule_seq(rule_seq);
-        std::dynamic_pointer_cast<RoboGrammarGenome>(_morph_genome)->make_graph();
-    }
     int load_rollout(const std::string& filename){
         std::ifstream file(filename);
         if(!file){
@@ -106,8 +102,8 @@ int main(int argc, char** argv){
     ind->set_rules(rule_seq);
     int nbr_of_step = ind->load_rollout(std::string(argv[2]));
     double time_step = apear::settings::getParameter<apear::settings::Double>(parameters,"#simTimeStep").value;
-    apear::settings::setParameter(parameters,"#maxEpisodeTime",std::make_shared<apear::settings::Double>(nbr_of_step * time_step));
-    apear::settings::setParameter(parameters,"#ctrlFreq",std::make_shared<const apear::settings::Double>(time_step));
+    // apear::settings::setParameter(parameters,"#maxEpisodeTime",std::make_shared<apear::settings::Double>(nbr_of_step * time_step));
+    // apear::settings::setParameter(parameters,"#ctrlFreq",std::make_shared<const apear::settings::Double>(time_step));
     ind->set_parameters(parameters);
 
 
@@ -117,9 +113,11 @@ int main(int argc, char** argv){
     int dof = sim.sim()->getRobotDofCount(sim.get_robot_idx());
     rd::VectorX torques(dof);
     do{
-        sim.update_robot(ind);
-        print::rollout(sim);
+        sim.update_robot(ind,false);
+        print::rollout(sim,false);
         print::pose(sim);
+        print::torques(sim);
+        sleep(time_step);
     }while(sim.step());
 
 

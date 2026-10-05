@@ -62,7 +62,7 @@ bool RoboGrammarSimulator::init(const IndPtr &ind){
     return !self_collision;
 }
 
-bool RoboGrammarSimulator::update_robot(const IndPtr &ind){
+bool RoboGrammarSimulator::update_robot(const IndPtr &ind, bool normalized){
     if(ind->get_control() == nullptr){
         if(apear_st::getParameter<apear_st::Boolean>(_parameters,"#verbose").value)
             std::cout << "No controller for this individual" << std::endl;
@@ -83,8 +83,9 @@ bool RoboGrammarSimulator::update_robot(const IndPtr &ind){
     rd::VectorX current_pos(dof);
     _sim->getJointPositions(_robot_idx,current_pos);
     std::vector<double> current_pos_std(current_pos.rows());
+    double norm_factor = normalized ? M_PI_2 : 1;
     for(int i = 0; i < current_pos.rows(); i++){
-        current_pos_std[i] = current_pos[i]/M_PI_2 + _rand_num->normal_dist(0,input_noise); //scale the joint positions to [-1,1]
+        current_pos_std[i] = current_pos[i]/norm_factor + _rand_num->normal_dist(0,input_noise); //scale the joint positions to [-1,1]
     }
 
 
@@ -102,7 +103,7 @@ bool RoboGrammarSimulator::update_robot(const IndPtr &ind){
     std::vector<double> next_pos_std = ind->get_control()->update(inputs);
     rd::VectorX next_pos(next_pos_std.size());
     for(size_t i = 0; i < next_pos_std.size(); i++){
-        next_pos[i] = next_pos_std[i]*M_PI_2 + _rand_num->normal_dist(0,output_noise); //scale the control output to [-pi/2,pi/2]
+        next_pos[i] = next_pos_std[i]*norm_factor + _rand_num->normal_dist(0,output_noise); //scale the control output to [-pi/2,pi/2]
     }
     _sim->setJointTargetPositions(_robot_idx,next_pos);
     return true;

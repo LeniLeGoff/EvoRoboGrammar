@@ -5,5 +5,6 @@ using namespace ea_rg;
 
 struct print{
     static void pose(const RoboGrammarSimulator &sim);
-    static void rollout(const RoboGrammarSimulator &sim);
+    static void rollout(const RoboGrammarSimulator &sim, bool normalized = true);
+    static void torques(const RoboGrammarSimulator &sim);
 };

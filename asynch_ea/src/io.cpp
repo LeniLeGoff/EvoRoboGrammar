@@ -10,16 +10,28 @@ void print::pose(const RoboGrammarSimulator &sim){
     wp.time = sim.time();
     std::cout << wp.to_string() << std::endl;
 }
-void print::rollout(const RoboGrammarSimulator &sim){
+void print::rollout(const RoboGrammarSimulator &sim, bool normalized){
     int dof  = sim.get_sim()->getRobotDofCount(sim.get_robot_idx());
     rd::VectorX act(dof);
     sim.get_sim()->getJointTargetPositions(sim.get_robot_idx(),act);
     rd::VectorX obs(dof);
     sim.get_sim()->getJointPositions(sim.get_robot_idx(),obs);
     std::vector<double> action(act.rows()), observation(obs.rows());
+    double norm_factor = normalized ? M_PI_2 : 1;
     for(int i = 0; i < act.rows(); i++)
-        action[i] = act[i]/M_PI_2; //scale the action to [-1,1]
+        action[i] = act[i]/norm_factor; //scale the action to [-1,1]
     for(int i = 0; i < obs.rows(); i++)
-        observation[i] = obs[i]/M_PI_2; //scale the observation to [-1,1]
+        observation[i] = obs[i]/norm_factor; //scale the observation to [-1,1]
     std::cout << apear::act_obs_t(sim.time(),observation,action).to_string() << std::endl;
+}
+
+void print::torques(const RoboGrammarSimulator &sim){
+    int dof  = sim.get_sim()->getRobotDofCount(sim.get_robot_idx());
+    rd::VectorX torques(dof);
+    sim.get_sim()->getJointTorques(sim.get_robot_idx(),torques);
+    std::cout << torques[0];
+    for(int i = 1; i < torques.rows(); i++){
+        std::cout << ";" << torques[i];
+    }
+    std::cout << std::endl;
 }
