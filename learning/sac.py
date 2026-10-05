@@ -3,6 +3,8 @@ from torchrl.objectives import SACLoss
 from torchrl.data import ReplayBuffer, LazyTensorStorage
 from torchrl.objectives.utils import SoftUpdate
 from torchrl.envs.libs.gym import GymEnv
+from torchrl.modules import ProbabilisticActor, TanhNormal, ValueOperator
+from torchrl.envs.utils import check_env_specs, ExplorationType, set_exploration_type
 from torchrl.envs import (
     Compose,
     DoubleToFloat,
@@ -10,8 +12,11 @@ from torchrl.envs import (
     StepCounter,
     TransformedEnv,
 )
+from torchrl.trainers.algorithms import SACTrainer
 from torch import optim
 from torch import nn
+from tensordict.nn import TensorDictModule
+from tensordict.nn.distributions import NormalParamExtractor
 import torch
 import environments as rg_env
 import arguments as rg_args
@@ -70,7 +75,11 @@ if __name__ == "__main__":
             StepCounter(),
         ),
     )
-    env.transform[0].init_stats(num_iter=128, reduce_dim=0, cat_dim=0)
+    env.transform[0].init_stats(num_iter=1000, reduce_dim=0, cat_dim=0)
+    check_env_specs(env)
+    rollout = env.rollout(3)
+    print("rollout of three steps:", rollout)
+    print("Shape of the rollout TensorDict:", rollout.batch_size)
     print("Creating networks")
     actor_network = nn.Sequential(
         nn.LazyLinear(hidden_dim[0], device=device),
@@ -80,11 +89,22 @@ if __name__ == "__main__":
         nn.LazyLinear(hidden_dim[2], device=device),
         nn.SiLU(),
         nn.LazyLinear(2*env.action_spec.shape[-1], device=device),
-        torch.NormalParamExtractor(),
+        NormalParamExtractor(),
     )
 
-    policy = torch.TensorDictModule(actor_network,in_keys=["observation"],out_keys=["loc","scale"])
-
+    policy_module = TensorDictModule(actor_network,in_keys=["observation"],out_keys=["loc","scale"])
+    policy_module = ProbabilisticActor(
+        module=policy_module,
+        spec=env.action_spec,
+        in_keys=["loc", "scale"],
+        distribution_class=TanhNormal,
+        distribution_kwargs={
+            "low": env.action_spec_unbatched.space.low,
+            "high": env.action_spec_unbatched.space.high,
+        },
+        return_log_prob=True,
+    # we'll need the log-prob for the numerator of the importance weights
+    )
     qvalue_network = nn.Sequential(
         nn.LazyLinear(hidden_dim[0], device=device),
         nn.SiLU(),
@@ -93,20 +113,28 @@ if __name__ == "__main__":
         nn.LazyLinear(hidden_dim[2], device=device),
         nn.SiLU(),
         nn.LazyLinear(1, device=device),
-        torch.NormalParamExtractor(),
     )
+
+    qvalue_module = ValueOperator(module=qvalue_network,in_keys=["observation"],)
+
+    # Run a dummy forward pass to initialize the Lazy modules (strictly required!)
+    out_policy = policy_module(env.reset())
+    out_value = qvalue_module(env.reset())
+
+    policy_module.eval()
+    qvalue_module.eval()
 
     print("Creating collector, loss, and replay buffer")
     # Set up collector, loss, and replay buffer
-    collector = Collector(env, policy, frames_per_batch=1000)
-    loss_module = SACLoss(actor_network, qvalue_network)
+    collector = Collector(env, policy_module, frames_per_batch=1000)
+    loss_module = SACLoss(policy_module, qvalue_module)
     optimizer = optim.Adam(loss_module.parameters(), lr=3e-4)
     replay_buffer = ReplayBuffer(storage=LazyTensorStorage(100000))
     target_net_updater = SoftUpdate(loss_module, eps=0.995)
 
     print("Creating trainer")
     # Create and run trainer
-    trainer = torch.SACTrainer(
+    trainer = SACTrainer(
         collector=collector,
         total_frames=1000000,
         frame_skip=1,

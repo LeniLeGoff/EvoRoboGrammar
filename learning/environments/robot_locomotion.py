@@ -65,7 +65,7 @@ class RobotLocomotionEnv(gym.Env):
         self.robot_index = self.sim.find_robot_index(self.robot)
         assert self.robot_index == 0
     
-        return self.get_obs()
+        return self.get_obs(), {}
 
     def get_obs(self):
         state = get_robot_state(self.sim, self.robot_index)
@@ -130,7 +130,7 @@ class RobotLocomotionEnv(gym.Env):
         
         done = self.detect_crash()
         
-        return obs, reward, done, {}
+        return obs, reward, done, not done, {}
         
 
 
