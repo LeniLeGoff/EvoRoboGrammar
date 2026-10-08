@@ -21,6 +21,7 @@ import torch
 import environments as rg_env
 import arguments as rg_args
 import sys
+import multiprocessing
 from utils import convert_rule_pairs_to_list,string_to_rule_pairs
 
 hidden_dim = [512,256,128]
@@ -28,9 +29,10 @@ hidden_dim = [512,256,128]
 
 if __name__ == "__main__":
     print("Setting up device and arguments")
+    is_fork = multiprocessing.get_start_method() == "fork"
     device = (
     torch.device(0)
-    if torch.cuda.is_available() and not torch.is_fork
+    if torch.cuda.is_available() and not is_fork
     else torch.device("cpu"))
     args_list = ['--env-name', 'RobotLocomotion-v0',
                  '--task', 'FlatTerrainTask',
@@ -64,8 +66,9 @@ if __name__ == "__main__":
     # --
     
     print("Creating environment")
-    
-    base_env = GymEnv("RobotLocomotion-v0",device=device,args=args,backend="gym")
+
+    #TODO make a parallel environment for training
+    base_env = GymEnv("RobotLocomotion-v0",device=device,args=args)
     print("Creating transformed environment")
     env = TransformedEnv(
         base_env,
@@ -126,7 +129,16 @@ if __name__ == "__main__":
 
     print("Creating collector, loss, and replay buffer")
     # Set up collector, loss, and replay buffer
-    collector = Collector(env, policy_module, frames_per_batch=1000)
+    collector = Collector(env, 
+                          policy=policy_module, 
+                          frames_per_batch=1000,
+                          auto_register_policy_transforms=True)
+
+    for i, data in enumerate(collector):
+        if i == 2:
+            print(data)
+            break
+    
     loss_module = SACLoss(policy_module, qvalue_module)
     optimizer = optim.Adam(loss_module.parameters(), lr=3e-4)
     replay_buffer = ReplayBuffer(storage=LazyTensorStorage(100000))
