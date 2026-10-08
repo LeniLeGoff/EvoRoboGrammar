@@ -4,9 +4,9 @@ sys.path.append(base_dir)
 sys.path.append(os.path.join(base_dir, 'rl'))
 
 import numpy as np
-import gym
-from gym import utils, spaces
-from gym.utils import seeding
+import gymnasium as gym
+from gymnasium import utils, spaces
+from gymnasium.utils import seeding
 from os import path
 import copy
 
@@ -52,6 +52,8 @@ class RobotLocomotionEnv(gym.Env):
         # init seed
         self.seed()
 
+        self.viewer = None
+
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
@@ -59,19 +61,25 @@ class RobotLocomotionEnv(gym.Env):
     def set_frame_skip(self, frame_skip):
         self.frame_skip = frame_skip
 
-    def reset(self):
+    def reset(self, seed = None, options = None):
+
+        super().reset(seed=seed)
+
         self.sim.remove_robot(0)
         self.sim.add_robot(self.robot, self.robot_init_pos, rd.Quaterniond(0.0, 0.0, 1.0, 0.0))
         self.robot_index = self.sim.find_robot_index(self.robot)
         assert self.robot_index == 0
     
-        return self.get_obs(), {}
+        return self.get_obs(), self.get_info()
 
     def get_obs(self):
         state = get_robot_state(self.sim, self.robot_index)
         # obs = deepcopy(state)
         obs = np.hstack((state[0:9], state[10], state[12:])) # remove x, z positions from observation
         return obs
+
+    def get_info(self):
+        return {}
 
     def compute_reward(self):
         state = get_robot_state(self.sim, self.robot_index)
@@ -85,8 +93,8 @@ class RobotLocomotionEnv(gym.Env):
 
         # reward = base_vel[3]
         # reward = base_vel[3] + np.dot(base_x_axis, target_x_axis) * 0.1 + np.dot(base_y_axis, target_y_axis) * 0.1
-        reward = base_vel[3] + np.dot(base_x_axis, target_x_axis) * 0.1 + np.dot(base_y_axis, target_y_axis) * 0.1 - np.sum(self.last_u ** 2) / self.action_dim * 0.7
-        # reward = 1.0 + base_vel[3] - np.sum(self.last_u ** 2) / self.action_dim * 0.7
+        reward = base_vel[3] + np.dot(base_x_axis, target_x_axis) * 0.1 + np.dot(base_y_axis, target_y_axis) * 0.1 - np.sum(self.last_action ** 2) / self.action_dim * 0.7
+        # reward = 1.0 + base_vel[3] - np.sum(self.last_action ** 2) / self.action_dim * 0.7
 
         return reward
 
@@ -112,16 +120,16 @@ class RobotLocomotionEnv(gym.Env):
     # control frequency is same as the simulation frequency
     # control observation is directly infered from state
     # control output action is the same as the action in simulation
-    def step(self, u):
-        u = np.clip(u, -1., 1.)
+    def step(self, action):
+        clipped_action = np.clip(action, -1., 1.)
         
-        self.last_u = deepcopy(u)
+        self.last_action = deepcopy(clipped_action)
 
-        action = u * np.pi / 2.
+        act = clipped_action * np.pi / 2.
 
         reward = 0.0
+        self.sim.set_joint_targets(self.robot_index, deepcopy(act.reshape(-1, 1)))
         for _ in range(self.frame_skip):
-            self.sim.set_joint_targets(self.robot_index, deepcopy(action.reshape(-1, 1)))
             self.sim.step()
             # reward += self.objective_fn(self.sim)
             reward += self.compute_reward()
@@ -130,8 +138,38 @@ class RobotLocomotionEnv(gym.Env):
         
         done = self.detect_crash()
         
-        return obs, reward, done, not done, {}
+        return obs, reward, done, False, self.get_info()
+    
+
+    def render(self, mode = "human"):
+        self.render_mode = mode
+        if self.render_mode != "human":
+            return
+
+        # Get robot bounds
+        lower = np.zeros(3)
+        upper = np.zeros(3)
+        self.sim.get_robot_world_aabb(self.robot_index, lower, upper)
+        time_step = self.task.time_step * self.frame_skip
+
+        if self.viewer is None:
+            self.viewer = rd.GLFWViewer()
+            self.viewer.camera_params.position = 0.5 * (lower + upper)
+            self.viewer.camera_params.yaw = 0.0
+            self.viewer.camera_params.pitch = -np.pi / 6
+            self.viewer.camera_params.distance = 2.0 * np.linalg.norm(upper - lower)
+
+        target_pos = 0.5 * (lower + upper)
+        camera_pos = self.viewer.camera_params.position.copy()
+        camera_pos += 5.0 * time_step * (target_pos - camera_pos)
+        self.viewer.camera_params.position = camera_pos
+        self.viewer.update(time_step)
+        self.viewer.render(self.sim)
+            # sim_time += time_step
+
+
+    def __del__(self):
+        if self.viewer is not None:
+            del self.viewer
         
-
-
 
