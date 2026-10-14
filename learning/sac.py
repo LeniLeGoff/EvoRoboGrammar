@@ -1,6 +1,6 @@
-from torchrl.collectors import Collector
+from torchrl.collectors import Collector, Evaluator
 from torchrl.objectives import SACLoss
-from torchrl.data import ReplayBuffer, LazyTensorStorage
+from torchrl.data import TensorDictReplayBuffer, LazyMemmapStorage
 from torchrl.objectives.utils import SoftUpdate
 from torchrl.envs.libs.gym import GymEnv
 from torchrl.modules import ProbabilisticActor, TanhNormal, ValueOperator
@@ -12,7 +12,19 @@ from torchrl.envs import (
     StepCounter,
     TransformedEnv,
 )
+from torchrl.envs.transforms import RewardSum
 from torchrl.trainers.algorithms import SACTrainer
+from torchrl.record import CSVLogger, TensorboardLogger
+from torchrl.record.loggers.trackio import TrackioLogger
+from torchrl.trainers import (
+    LogScalar,
+    LogValidationReward,
+    ReplayBufferTrainer,
+    Trainer,
+    UpdateWeights,
+    TargetNetUpdaterHook,
+)
+from torchrl.checkpoint import Checkpoint, CheckpointRotation
 from torch import optim
 from torch import nn
 from tensordict.nn import TensorDictModule
@@ -25,6 +37,26 @@ import multiprocessing
 from utils import convert_rule_pairs_to_list,string_to_rule_pairs
 
 hidden_dim = [512,256,128]
+log_interval=1
+batch_size=100
+frames_per_batch=1000
+
+
+class QValueNetwork(nn.Module):
+    def __init__(self, hidden_dim, device):
+        super().__init__()
+        self.network = nn.Sequential(
+            nn.LazyLinear(hidden_dim[0], device=device),
+            nn.SiLU(),
+            nn.LazyLinear(hidden_dim[1], device=device),
+            nn.SiLU(),
+            nn.LazyLinear(hidden_dim[2], device=device),
+            nn.SiLU(),
+            nn.LazyLinear(1, device=device),
+        )
+
+    def forward(self, observation, action):
+        return self.network(torch.cat((observation, action), dim=-1))
 
 
 if __name__ == "__main__":
@@ -76,6 +108,7 @@ if __name__ == "__main__":
             ObservationNorm(in_keys=["observation"]),
             DoubleToFloat(),
             StepCounter(),
+            RewardSum(in_keys=["reward"], out_keys=["reward_sum"]),
         ),
     )
     env.transform[0].init_stats(num_iter=1000, reduce_dim=0, cat_dim=0)
@@ -108,21 +141,14 @@ if __name__ == "__main__":
         return_log_prob=True,
     # we'll need the log-prob for the numerator of the importance weights
     )
-    qvalue_network = nn.Sequential(
-        nn.LazyLinear(hidden_dim[0], device=device),
-        nn.SiLU(),
-        nn.LazyLinear(hidden_dim[1], device=device),
-        nn.SiLU(),
-        nn.LazyLinear(hidden_dim[2], device=device),
-        nn.SiLU(),
-        nn.LazyLinear(1, device=device),
-    )
+    qvalue_network = QValueNetwork(hidden_dim, device)
 
-    qvalue_module = ValueOperator(module=qvalue_network,in_keys=["observation"],)
+    qvalue_module = ValueOperator(module=qvalue_network,in_keys=["observation","action"],out_keys=["state_action_value"])
 
     # Run a dummy forward pass to initialize the Lazy modules (strictly required!)
     out_policy = policy_module(env.reset())
-    out_value = qvalue_module(env.reset())
+    output = env.reset()
+    out_value = qvalue_module(out_policy)
 
     policy_module.eval()
     qvalue_module.eval()
@@ -131,19 +157,18 @@ if __name__ == "__main__":
     # Set up collector, loss, and replay buffer
     collector = Collector(env, 
                           policy=policy_module, 
-                          frames_per_batch=1000,
+                          frames_per_batch=frames_per_batch,
                           auto_register_policy_transforms=True)
 
-    for i, data in enumerate(collector):
-        if i == 2:
-            print(data)
-            break
     
+    logger = CSVLogger(exp_name="sac_forward_walking", log_dir="sac_logs")
+    # tblogger = TensorboardLogger(exp_name="sac_forward_walking", log_dir="sac_logs")
+    tiologger = TrackioLogger(exp_name="sac_forward_walking",project="forward_walking",name="test_run")
+    replay_buffer = TensorDictReplayBuffer(storage=LazyMemmapStorage(100000),batch_size=batch_size)    
     loss_module = SACLoss(policy_module, qvalue_module)
     optimizer = optim.Adam(loss_module.parameters(), lr=3e-4)
-    replay_buffer = ReplayBuffer(storage=LazyTensorStorage(100000))
     target_net_updater = SoftUpdate(loss_module, eps=0.995)
-
+    checkpoint = Checkpoint(policy=policy_module,format="directory",)
     print("Creating trainer")
     # Create and run trainer
     trainer = SACTrainer(
@@ -155,6 +180,36 @@ if __name__ == "__main__":
         optimizer=optimizer,
         replay_buffer=replay_buffer,
         target_net_updater=target_net_updater,
+        logger=tiologger,
+        log_interval=log_interval,
+        checkpoint=checkpoint,
+        checkpoint_rotation=CheckpointRotation("sac_forward_walking/checkpoints", keep_last=5,keep_best=("reward",'max')),
+        checkpoint_metadata=lambda trainer:{"reward": trainer.episode_stats["reward"].max},
     )
+    # target_net_updater_hook = TargetNetUpdaterHook(target_net_updater)
+    # trainer.register_op("post_optim",target_net_updater_hook)
+
+    buffer_hook = ReplayBufferTrainer(
+        replay_buffer,
+        flatten_tensordicts=True,
+    )
+    buffer_hook.register(trainer)
+    weight_updater = UpdateWeights(collector, update_weights_interval=1)
+    weight_updater.register(trainer)
+    recorder = LogValidationReward(
+        record_interval=100,  # log every 100 optimization steps
+        record_frames=1000,  # maximum number of frames in the record
+        frame_skip=1,
+        policy_exploration=policy_module,
+        environment=env,
+        exploration_type=ExplorationType.DETERMINISTIC,
+        log_keys=[("next", "reward")],
+        out_keys={("next", "reward"): "rewards"},
+        log_pbar=True,
+        suffix="test_policy",
+    )
+    recorder.register(trainer)
+    log_reward = LogScalar(log_pbar=True)
+    log_reward.register(trainer)
     print("Starting training")
     trainer.train()

@@ -44,7 +44,7 @@ class RobotLocomotionEnv(gym.Env):
         self.action_range = np.array([-np.pi, np.pi])
         self.action_space = spaces.Box(low = np.full(self.action_dim, -1.0), 
             high = np.full(self.action_dim, 1.0), dtype = np.float32)
-
+        self.last_action = np.zeros(self.action_dim, dtype=np.float32)
         observation = self.get_obs()
         self.observation_space = spaces.Box(low = np.full(observation.shape, -np.inf), 
             high = np.full(observation.shape, np.inf), dtype = np.float32)
@@ -79,7 +79,7 @@ class RobotLocomotionEnv(gym.Env):
         return obs
 
     def get_info(self):
-        return {}
+        return {"action": self.last_action}
 
     def compute_reward(self):
         state = get_robot_state(self.sim, self.robot_index)
