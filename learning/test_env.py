@@ -1,15 +1,4 @@
-from pytest import Collector
 from torchrl.envs.libs.gym import GymEnv
-from torchrl.envs import (
-    Compose,
-    DoubleToFloat,
-    ObservationNorm,
-    StepCounter,
-    TransformedEnv,
-)
-from torchrl.render import make_render_env
-from torchrl.record import VideoRecorder
-from torchrl.record.loggers.csv import CSVLogger
 from tensordict import TensorDict
 import arguments as rg_args
 from utils import convert_rule_pairs_to_list,string_to_rule_pairs
