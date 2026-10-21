@@ -191,3 +191,8 @@ def get_parser():
         default=5)
 
     return parser
+
+def parse_args(argv):
+    parser = get_parser()
+    args = parser.parse_args(argv[1:])
+    return args

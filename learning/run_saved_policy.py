@@ -18,19 +18,22 @@ device = (torch.device(0)
           if torch.cuda.is_available() and not is_fork
           else torch.device("cpu"))
 
-args_list = ['--env-name', 'RobotLocomotion-v0',
-                '--task', 'FlatTerrainTask',
-                '--num-env-steps', '30000000']
-parser = rg_args.get_parser()
-args = parser.parse_args(args_list + sys.argv[1:])
+args = rg_args.parse_args(sys.argv)
+parameters = {
+    "env_name": "RobotLocomotion-v0",
+    "task": "FlatTerrainTask",
+    "rule_sequence": args.rule_sequence,
+    "grammar_file": args.grammar_file,
+    "hidden_dim": [512, 256, 128]
+    }
 rule_list = convert_rule_pairs_to_list(args.grammar_file,string_to_rule_pairs(args.rule_sequence))
-args.rule_sequence = []
+parameters["rule_sequence"] = []
 for rule in rule_list:
-    args.rule_sequence.append(str(rule) + ",")
+    parameters["rule_sequence"].append(str(rule) + ",")
 
-env = sac.make_env(args,device)
+env = sac.make_env(parameters,device)
 
-actor_network = sac.make_actor_network(env, [512, 256, 128],device)
+actor_network = sac.make_actor_network(env, parameters["hidden_dim"] ,device)
 policy_module = sac.make_policy_module(env, actor_network)
 # policy_module = TensorDictModule(actor_network,in_keys=["observation"],out_keys=["action"])
 # policy_module = Actor(

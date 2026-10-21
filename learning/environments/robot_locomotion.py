@@ -10,18 +10,18 @@ from gymnasium.utils import seeding
 from os import path
 import copy
 
-from simulation.simulation_utils import *
-from common.common import *
+from learning.environments.simulation_utils import *
+from learning.environments.common import *
 import tasks
 
 class RobotLocomotionEnv(gym.Env):
-    def __init__(self, args):
+    def __init__(self, parameters):
         # init task and robot
         print("Initializing RobotLocomotion")
-        print("Task: ", args.task)
-        task_class = getattr(tasks, args.task)
+        print("Task: ", parameters["task"])
+        task_class = getattr(tasks, parameters["task"])
         self.task = task_class()
-        self.robot = build_robot(args)
+        self.robot = build_robot(parameters)
         
         # get init pos
         self.robot_init_pos, has_self_collision = presimulate(self.robot)
@@ -136,9 +136,9 @@ class RobotLocomotionEnv(gym.Env):
             
         obs = self.get_obs()
         
-        done = self.detect_crash()
+        truncated = self.detect_crash()
         
-        return obs, reward, done, False, self.get_info()
+        return obs, reward, False, truncated, self.get_info()
     
 
     def render(self, mode = "human"):

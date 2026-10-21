@@ -320,6 +320,16 @@ Graph applyRule(const Rule &rule, const Graph &target,
     }
   }
 
+  //If first rule flag body node as base node
+  if(rule.name_ == "make_robot"){
+      for(auto &node : result.nodes_){
+          if(node.name_ == "body"){
+              node.attrs_.base_ = true;
+              break;
+          }
+      }
+  }
+
   // Copy target edges not in LHS to result
   std::unordered_set<EdgeIndex> target_edges_in_lhs;
   for (const auto &target_edges : lhs_to_target.edge_mapping_) {

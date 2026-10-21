@@ -12,18 +12,22 @@ device = (torch.device(0)
           if torch.cuda.is_available() and not is_fork
           else torch.device("cpu"))
 
-args_list = ['--env-name', 'RobotLocomotion-v0',
-                '--task', 'FlatTerrainTask',
-                '--num-env-steps', '30000000']
-parser = rg_args.get_parser()
-args = parser.parse_args(args_list + sys.argv[1:])
+
+
+args = rg_args.parse_args(sys.argv)
+parameters = {
+    "env_name": "RobotLocomotion-v0",
+    "task": "FlatTerrainTask",
+    "rule_sequence": args.rule_sequence,
+    "grammar_file": args.grammar_file,
+    }
 rule_list = convert_rule_pairs_to_list(args.grammar_file,string_to_rule_pairs(args.rule_sequence))
-args.rule_sequence = []
+parameters["rule_sequence"] = []
 for rule in rule_list:
-    args.rule_sequence.append(str(rule) + ",")
+    parameters["rule_sequence"].append(str(rule) + ",")
 
 
-base_env = GymEnv("RobotLocomotion-v0",device=device,args=args)
+base_env = GymEnv("RobotLocomotion-v0",device=device,parameters=parameters)
 
 base_env.reset()
 for i in range(300):

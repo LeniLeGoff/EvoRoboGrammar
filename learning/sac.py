@@ -36,42 +36,23 @@ import sys
 import multiprocessing
 from utils import convert_rule_pairs_to_list,string_to_rule_pairs
 
-def parse_args():
-    args_list = ['--env-name', 'RobotLocomotion-v0',
-                 '--task', 'FlatTerrainTask',
-                 '--use-gae',
-                 '--log-interval', '5',
-                 '--num-steps', '1024',
-                 '--num-processes', '1',
-                 '--lr', '3e-4',
-                 '--entropy-coef', '0',
-                 '--value-loss-coef', '0.5',
-                 '--ppo-epoch', '10',
-                 '--num-mini-batch', '32',
-                 '--gamma', '0.995',
-                 '--gae-lambda', '0.95',
-                 '--num-env-steps', '30000000',
-                 '--use-linear-lr-decay',
-                 '--use-proper-time-limits',
-                 '--save-interval', '100',
-                 '--seed', '2',
-                 '--save-dir', './trained_models/RobotLocomotion-v0/test/',
-                 '--render-interval', '80']
-    parser = rg_args.get_parser()
-    args = parser.parse_args(args_list + sys.argv[1:])
-    return args
 
-def make_env(args, device,parallel=False):
+def make_env(parameters, device,parallel=False):
+    cat_dim = 0
+    def maker():
+        return GymEnv("RobotLocomotion-v0", device=device, parameters=parameters)
     if parallel:
-        def maker():
-            return GymEnv("RobotLocomotion-v0", device=device, args=args)
+        
         base_env = ParallelEnv(
-            args.num_processes,
-            EnvCreator(maker),
-            serial_for_single=True
+            parameters["num_processes"],
+            maker,
+            serial_for_single=True,
+            metadata_from_workers=True,
+            auto_wrap_envs=False
         )
+        cat_dim = 1
     else:
-        base_env = GymEnv("RobotLocomotion-v0",device=device,args=args)
+        base_env = maker()
     observation_norm = ObservationNorm(in_keys=["observation"])
     env = TransformedEnv(
         base_env,
@@ -82,7 +63,7 @@ def make_env(args, device,parallel=False):
             RewardSum(in_keys=["reward"], out_keys=["reward_sum"]),
         ),
     )
-    env.transform[0].init_stats(num_iter=1000, reduce_dim=0, cat_dim=0)
+    env.transform[0].init_stats(num_iter=1000, reduce_dim=cat_dim, cat_dim=cat_dim)
 
     check_env_specs(env)
     return env
@@ -148,21 +129,24 @@ def checkpoint_metadata(trainer):
     return {"reward": max_reward}
 
 if __name__ == "__main__":
-    args = parse_args()
+    args = rg_args.parse_args(sys.argv)
     parameters = {
-        "env_name": args.env_name,
-        "task": args.task,
+        "env_name": "RobotLocomotion-v0",
+        "task": "FlatTerrainTask",
+        "rule_sequence": args.rule_sequence,
+        "grammar_file": args.grammar_file,
         "exp_name": "sac_forward_walking",
         "log_dir": "sac_logs",
         "hidden_dim": [512, 256, 128],
         "log_interval": 1,
         "batch_size": 100,
         "frames_per_batch": 1000,
+        "num_steps":1024,
+        "num_processes": 4,
         "lr": 3e-4,
         "eps": 0.995,
-        "parallel": False,
+        "parallel": True,
         }
-    
     #Determine device to use for training
     is_fork = multiprocessing.get_start_method() == "fork"
     device = (
@@ -175,15 +159,15 @@ if __name__ == "__main__":
     # converting rule_sequence from async_ea format to RoboGrammar format
     print(args.rule_sequence)
     rule_list = convert_rule_pairs_to_list(args.grammar_file,string_to_rule_pairs(args.rule_sequence))
-    args.rule_sequence = []
+    parameters["rule_sequence"] = []
     for rule in rule_list:
-        args.rule_sequence.append(str(rule) + ",")
+        parameters["rule_sequence"].append(str(rule) + ",")
     # --
     
     print("Creating environment")
 
     #TODO make a parallel environment for training
-    env = make_env(args, device, parallel=parameters["parallel"])
+    env = make_env(parameters, device, parallel=parameters["parallel"])
     # rollout = env.rollout(3)
     # print("rollout of three steps:", rollout)
     # print("Shape of the rollout TensorDict:", rollout.batch_size)
@@ -241,12 +225,15 @@ if __name__ == "__main__":
     buffer_hook.register(trainer)
     weight_updater = UpdateWeights(collector, update_weights_interval=1)
     weight_updater.register(trainer)
+    parallel_env = env
+    if parameters["parallel"]:
+        validation_env = make_env(parameters, device, parallel=False)
     recorder = LogValidationReward(
         record_interval=100,  # log every 100 optimization steps
         record_frames=1000,  # maximum number of frames in the record
         frame_skip=1,
         policy_exploration=policy_module,
-        environment=env,
+        environment=validation_env,
         exploration_type=ExplorationType.DETERMINISTIC,
         log_keys=[("next", "reward")],
         out_keys={("next", "reward"): "rewards"},

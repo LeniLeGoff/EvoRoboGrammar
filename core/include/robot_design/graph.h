@@ -168,6 +168,10 @@ bool checkRuleApplicability(const Rule &rule, const Graph &target,
 Graph applyRule(const Rule &rule, const Graph &target,
                 const GraphMapping &lhs_to_target);
 
+NodeIndex find_root_node(const Graph &g);
+
+int graph_edit_distance(const Graph &g1, const Graph &g2);
+
 /**
  * Copy attributes that are different from their default values from src to
  * dest.

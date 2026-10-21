@@ -9,6 +9,33 @@
 
 namespace robot_design {
 
+NodeIndex find_root_node(const Graph &graph){
+    // Find a root for the kinematic tree (which will become the base link)
+    NodeIndex root_node = 0;
+    // If a node has base == true, use it as the root
+    const auto it =
+        std::find_if(graph.nodes_.begin(), graph.nodes_.end(),
+                     [](const Node &node) { return node.attrs_.base_; });
+    if (it != graph.nodes_.end()) {
+        root_node = std::distance(graph.nodes_.begin(), it);
+    } else {
+        // Follow edges backwards in the graph to find a root
+        // Limit the number of iterations in case the graph contains a cycle
+        for (std::size_t i = 0; i < graph.edges_.size(); ++i) {
+            // Find an edge pointing towards this node
+            const auto it = std::find_if(
+                graph.edges_.begin(), graph.edges_.end(),
+                [root_node](const Edge &edge) { return edge.head_ == root_node; });
+            if (it != graph.edges_.end()) {
+                root_node = it->tail_; // Follow edge backwards
+            } else {
+                break; // Node is a root
+            }
+        }
+    }
+    return root_node;
+}
+
 Robot buildRobot(const Graph &graph) {
   // State struct for graph traversal
   struct NodeEntry {
@@ -33,29 +60,7 @@ Robot buildRobot(const Graph &graph) {
 
   assert(!graph.nodes_.empty());
 
-  // Find a root for the kinematic tree (which will become the base link)
-  NodeIndex root_node = 0;
-  // If a node has base == true, use it as the root
-  const auto it =
-      std::find_if(graph.nodes_.begin(), graph.nodes_.end(),
-                   [](const Node &node) { return node.attrs_.base_; });
-  if (it != graph.nodes_.end()) {
-    root_node = std::distance(graph.nodes_.begin(), it);
-  } else {
-    // Follow edges backwards in the graph to find a root
-    // Limit the number of iterations in case the graph contains a cycle
-    for (std::size_t i = 0; i < graph.edges_.size(); ++i) {
-      // Find an edge pointing towards this node
-      const auto it = std::find_if(
-          graph.edges_.begin(), graph.edges_.end(),
-          [root_node](const Edge &edge) { return edge.head_ == root_node; });
-      if (it != graph.edges_.end()) {
-        root_node = it->tail_; // Follow edge backwards
-      } else {
-        break; // Node is a root
-      }
-    }
-  }
+  NodeIndex root_node = find_root_node(graph);
 
   // Build the (simulated) robot using breadth-first traversal
   Robot robot;

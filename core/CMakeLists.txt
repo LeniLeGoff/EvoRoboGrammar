@@ -47,6 +47,7 @@ set(ROBOTDESIGN_SOURCES
     src/graph_build.cpp
     src/graph_io.cpp
     src/graph_rewrite.cpp
+    src/graph_distance.cpp
     src/optim.cpp
     src/render.cpp
     src/sim.cpp
