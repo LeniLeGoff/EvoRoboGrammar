@@ -131,14 +131,14 @@ void GLRenderer::render(const Simulation &sim,
   drawOpaque(sim, *default_program_, default_program_state);
 
   // Render label text with depth testing/writing turned off
-  glDisable(GL_DEPTH_TEST);
-  msdf_program_->use();
-  ProgramState msdf_program_state;
-  msdf_program_state.setProjectionMatrix(proj_matrix);
-  msdf_program_state.setViewMatrix(view_matrix);
-  font_->page_textures_.at(0)->bind();
-  drawLabels(sim, *msdf_program_, msdf_program_state);
-  glEnable(GL_DEPTH_TEST);
+  // glDisable(GL_DEPTH_TEST);
+  // msdf_program_->use();
+  // ProgramState msdf_program_state;
+  // msdf_program_state.setProjectionMatrix(proj_matrix);
+  // msdf_program_state.setViewMatrix(view_matrix);
+  // font_->page_textures_.at(0)->bind();
+  // drawLabels(sim, *msdf_program_, msdf_program_state);
+  // glEnable(GL_DEPTH_TEST);
 }
 
 void GLRenderer::drawOpaque(const Simulation &sim, const Program &program,

@@ -8,16 +8,7 @@ namespace apear_st = apear::settings;
 
 void RoboGrammarGenome::init(){
     std::string grammar_file = apear_st::getParameter<apear_st::String>(_parameters,"#grammarFile").value;
-    for(const rd::Graph &graph : rd::loadGraphs(grammar_file)){
-        rd::Rule rule = rd::createRuleFromGraph(graph);
-        int type = 0;
-        if(rule.lhs_.nodes_.size() < rule.rhs_.nodes_.size())
-            type = 0; //growing rule
-        else
-            type = 1; //building rule
-        _grammar[type].push_back(rule);
-
-    }
+    make_grammar(grammar_file);
     _rule_seq.clear();
     _rule_seq.push_back(std::make_pair(0,0)); //start with the first growing rule
     _graph = _make_graph(_rule_seq);
@@ -72,7 +63,17 @@ void RoboGrammarGenome::mutate(){
         _close_graph();
     }
 }
-
+void RoboGrammarGenome::make_grammar(const std::string &grammar_file){
+    for(const rd::Graph &graph : rd::loadGraphs(grammar_file)){
+        rd::Rule rule = rd::createRuleFromGraph(graph);
+        int type = 0;
+        if(rule.lhs_.nodes_.size() < rule.rhs_.nodes_.size())
+            type = 0; //growing rule
+        else
+            type = 1; //building rule
+        _grammar[type].push_back(rule);
+    }
+}
 void RoboGrammarGenome::make_graph(){
     _graph = _make_graph(_rule_seq);
 }

@@ -53,10 +53,11 @@ int main(int argc, char** argv){
         return 1;
     }
     apear::settings::ParametersMapPtr parameters = std::make_shared<apear::settings::ParametersMap>();
-    parameters->emplace("#verbose",std::make_shared<apear::settings::Boolean>(true));
-    parameters->emplace("#grammarFile",std::make_shared<apear::settings::String>(std::string(argv[1])));
-    parameters->emplace("#maxEpisodeTime",std::make_shared<apear::settings::Double>(-1));
-    parameters->emplace("#withRandomControl",std::make_shared<apear::settings::Boolean>(std::string(argv[2])=="1"));
+    apear::settings::setParameter(parameters,"#verbose",std::make_shared<apear::settings::Boolean>(true));
+    apear::settings::setParameter(parameters,"#grammarFile",std::make_shared<apear::settings::String>(std::string(argv[1])));
+    apear::settings::setParameter(parameters,"#maxEpisodeTime",std::make_shared<apear::settings::Double>(-1));
+    apear::settings::setParameter(parameters,"#withRandomControl",std::make_shared<apear::settings::Boolean>(std::string(argv[2])=="1"));
+    apear::settings::setParameter(parameters,"#ctrlFreq",std::make_shared<apear::settings::Double>(0.6));
     std::vector<RoboGrammarGenome::rule_idx_t> rule_seq;
     for(int i = 3; i < argc; i++){
         std::string arg(argv[i]);

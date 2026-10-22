@@ -42,7 +42,7 @@ policy_module = sac.make_policy_module(env, actor_network)
 # )
 
 checkpoint = Checkpoint(policy=policy_module)
-checkpoint.load("sac_forward_walking/checkpoints/checkpoint-000001000000",
+checkpoint.load("sac_forward_walking/checkpoints/checkpoint-000001000944",
                 components=["policy"])
 
 policy_module.eval()

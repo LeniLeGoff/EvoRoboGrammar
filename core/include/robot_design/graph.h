@@ -11,6 +11,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <memory>
 
 namespace robot_design {
 
@@ -66,7 +67,7 @@ struct EdgeAttributes {
   Scalar joint_pos_ = 1.0;
   Quaternion joint_rot_ = Quaternion::Identity();
   Vector3 joint_axis_ = Vector3::UnitZ();
-  Scalar joint_kp_ = 0.1;
+  Scalar joint_kp_ = 0.05;
   Scalar joint_kd_ = 0.5;
   Scalar joint_torque_ = 5.0;
   Scalar joint_lower_limit_ = 0.0;
@@ -170,7 +171,17 @@ Graph applyRule(const Rule &rule, const Graph &target,
 
 NodeIndex find_root_node(const Graph &g);
 
-int graph_edit_distance(const Graph &g1, const Graph &g2);
+struct Tree{
+    using Ptr = std::shared_ptr<Tree>;
+    NodeIndex node;
+    std::vector<EdgeIndex> edges;
+    std::vector<Tree::Ptr> childs;
+};
+
+void create_tree_from_graph(const Graph& g, NodeIndex root_node, Tree::Ptr &tree);
+
+int tree_edit_distance(const Graph &g1, const Graph &g2);
+int ted_rec(const Graph &g1, const Graph &g2,const Tree::Ptr &t1,const Tree::Ptr &t2);
 
 /**
  * Copy attributes that are different from their default values from src to

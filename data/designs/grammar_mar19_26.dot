@@ -32,12 +32,12 @@ digraph make_body_with_legs {
   }
 
   subgraph R {
-    body [shape=capsule, length=0.15, radius=0.045, density=3.0];
-    limb_mount [shape=capsule, length=0.1, radius=0.025];
+    body [shape=capsule, length=0.15, radius=0.045, density=3.0,label="body"];
+    limb_mount [shape=capsule, length=0.1, radius=0.025,label="limb_mount"];
     limb_link [label="limb_link"];
     limb [label="limb"];
-    body -> limb_mount [type=fixed, offset=0.5, axis_angle="0 1 0 90"];
-    body -> limb_mount [type=fixed, offset=0.5, axis_angle="0 1 0 90",
+    body -> limb_mount [type=fixed, offset=0.5, axis_angle="0 1 0 90",label="body_limb_mount"];
+    body -> limb_mount [type=fixed, offset=0.5, axis_angle="0 1 0 90",label="body_limb_mount",
                              mirror=true];
     limb_mount -> limb_link [label="limb_joint"];
     limb_link -> limb;
@@ -50,7 +50,7 @@ digraph make_body_without_legs {
   }
 
   subgraph R {
-    body [shape=capsule, length=0.15, radius=0.045, density=3.0];
+    body [shape=capsule, length=0.15, radius=0.045, density=3.0,label="body"];
   }
 }
 
@@ -107,7 +107,7 @@ digraph make_normal_limb_link {
   }
 
   subgraph R {
-    limb_link [shape=capsule, length=0.1, radius=0.025];
+    limb_link [shape=capsule, length=0.1, radius=0.025,label="limb_normal_link"];
   }
 }
 
@@ -117,7 +117,7 @@ digraph make_long_limb_link {
   }
 
   subgraph R {
-    limb_link [shape=capsule, length=0.15, radius=0.025];
+    limb_link [shape=capsule, length=0.15, radius=0.025,label="limb_long_link"];
   }
 }
 
@@ -127,7 +127,7 @@ digraph make_fixed_body_joint {
   }
 
   subgraph R {
-    parent -> child [type=fixed];
+    parent -> child [type=fixed,label="body_fixed_joint"];
   }
 }
 
@@ -137,7 +137,7 @@ digraph make_roll_body_joint {
   }
 
   subgraph R {
-    parent -> child [type=hinge, joint_axis="1 0 0"];
+    parent -> child [type=hinge, joint_axis="1 0 0",label="body_roll_joint"];
   }
 }
 
@@ -147,7 +147,7 @@ digraph make_swing_body_joint {
   }
 
   subgraph R {
-    parent -> child [type=hinge, joint_axis="0 1 0", color="0 0.5 0"];
+    parent -> child [type=hinge, joint_axis="0 1 0", color="0 0.5 0",label="body_swing_joint"];
   }
 }
 
@@ -157,7 +157,7 @@ digraph make_lift_body_joint {
   }
 
   subgraph R {
-    parent -> child [type=hinge, joint_axis="0 0 1"];
+    parent -> child [type=hinge, joint_axis="0 0 1",label="body_lift_joint"];
   }
 }
 
@@ -167,7 +167,7 @@ digraph make_left_roll_limb_joint {
   }
 
   subgraph R {
-    parent -> child [type=hinge, axis_angle="0 1 0 -90", joint_axis="1 0 0"];
+    parent -> child [type=hinge, axis_angle="0 1 0 -90", joint_axis="1 0 0",label="limb_left_roll_joint"];
   }
 }
 
@@ -177,7 +177,7 @@ digraph make_right_roll_limb_joint {
   }
 
   subgraph R {
-    parent -> child [type=hinge, axis_angle="0 1 0 90", joint_axis="1 0 0"];
+    parent -> child [type=hinge, axis_angle="0 1 0 90", joint_axis="1 0 0",label="limb_right_roll_joint"];
   }
 }
 
@@ -187,7 +187,7 @@ digraph make_swing_limb_joint {
   }
 
   subgraph R {
-    parent -> child [type=hinge, joint_axis="0 1 0", color="0 0.5 0"];
+    parent -> child [type=hinge, joint_axis="0 1 0", color="0 0.5 0",label="limb_swing_joint"];
   }
 }
 
@@ -197,7 +197,7 @@ digraph make_lift_limb_joint {
   }
 
   subgraph R {
-    parent -> child [type=hinge, axis_angle="0 0 1", joint_axis="0 0 1"];
+    parent -> child [type=hinge, axis_angle="0 0 1", joint_axis="0 0 1",label="limb_lift_joint"];
   }
 }
 

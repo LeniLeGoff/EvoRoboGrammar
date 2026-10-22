@@ -37,6 +37,11 @@ import multiprocessing
 from utils import convert_rule_pairs_to_list,string_to_rule_pairs
 
 
+# class Loggers(Logger):
+#     def __init__(self,project_name, exp_name, log_dir):
+#         self.csv_logger = CSVLogger(exp_name=exp_name,log_dir=log_dir)
+#         self.tio_logger = TrackioLogger(exp_name=exp_name,project=project_name,name=exp_name)
+
 def make_env(parameters, device,parallel=False):
     cat_dim = 0
     def maker():
@@ -142,7 +147,7 @@ if __name__ == "__main__":
         "batch_size": 100,
         "frames_per_batch": 1000,
         "num_steps":1024,
-        "num_processes": 4,
+        "num_processes": 24,
         "lr": 3e-4,
         "eps": 0.995,
         "parallel": True,
@@ -209,7 +214,7 @@ if __name__ == "__main__":
         optimizer=optimizer,
         replay_buffer=replay_buffer,
         target_net_updater=target_net_updater,
-        logger=tiologger,
+        logger=logger,
         log_interval=parameters["log_interval"],
         checkpoint=checkpoint,
         checkpoint_rotation=CheckpointRotation(parameters["exp_name"] + "/checkpoints", keep_last=5,keep_best=("reward",'max')),
