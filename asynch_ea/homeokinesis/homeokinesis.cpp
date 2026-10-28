@@ -9,42 +9,6 @@
 using namespace apear;
 
 
-void HKInd::init(){
-    _morph_genome->init();
-}
-
-void HKInd::_create_controller(){
-    int dof = get_robot_dof();
-    if(dof == 0)
-        return;
-    int hk_type = settings::getParameter<settings::Integer>(_parameters,"#HKType").value;
-    if(hk_type == HKType::HK){
-        _control = std::make_shared<apear::hk::Homeokinesis>(dof+7,dof);
-        _control->set_random_number(_rand_num);
-        _control->set_parameters(_parameters);
-        std::dynamic_pointer_cast<apear::hk::Homeokinesis>(_control)->init();
-        if(apear::settings::getParameter<apear::settings::Boolean>(_parameters,"#initHKNoise").value)
-            std::dynamic_pointer_cast<apear::hk::Homeokinesis>(_control)->add_noise(
-                apear::settings::getParameter<apear::settings::Double>(_parameters,"#HKNoiseStrength").value);
-    }else if(hk_type == HKType::CPGRBFHK){
-        _control = std::make_shared<apear::hk::CPGRBFHK>(dof);
-        _control->set_random_number(_rand_num);
-        _control->set_parameters(_parameters);
-        std::dynamic_pointer_cast<apear::hk::CPGRBFHK>(_control)->init();
-        if(apear::settings::getParameter<apear::settings::Boolean>(_parameters,"#initHKNoise").value)
-            std::dynamic_pointer_cast<apear::hk::CPGRBFHK>(_control)->add_noise(
-                apear::settings::getParameter<apear::settings::Double>(_parameters,"#HKNoiseStrength").value);
-    }
-
-
-}
-
-
-void HKInd::set_rules(const std::vector<RoboGrammarGenome::rule_idx_t> &rule_seq){
-    std::dynamic_pointer_cast<RoboGrammarGenome>(_morph_genome)->set_rule_seq(rule_seq);
-    std::dynamic_pointer_cast<RoboGrammarGenome>(_morph_genome)->make_graph();
-}
-
 int main(int argc, char** argv){
     if(argc == 1){
         std::cout << "usage: arg1 : path to parameters file" << std::endl;
@@ -74,7 +38,8 @@ int main(int argc, char** argv){
         rule_seq.push_back(std::make_pair(rules[i],rules[i+1]));
     }
 
-
+    double ctrl_freq = settings::getParameter<settings::Double>(parameters,"#ctrlFreq").value;
+    double time_step = settings::getParameter<settings::Double>(parameters,"#simTimeStep").value;
     std::vector<double> arena_size = settings::getParameter<settings::Sequence<double>>(parameters,"#arenaSize").value;
     ea_rg::FlatArena env(arena_size[0],arena_size[1],ea_rg::fitness::Dummy());
 
@@ -84,10 +49,21 @@ int main(int argc, char** argv){
     ea_rg::RoboGrammarSimulator sim(parameters,rand_num,false);
     env.init(sim);
     sim.init(ind);
+    int count = 0;
     do{
         sim.update_robot(ind);
-        print::rollout(sim);
+        int step_counter = static_cast<int>(std::round(sim.time()/time_step));
+        int ctrl_step  = static_cast<int>(std::round(ctrl_freq/time_step));
+        if(step_counter%ctrl_step == 0)
+            print::rollout(sim,false);
+        print::torques(sim);
         // print::pose(sim);
+        sleep(time_step);
+        sim.get_sim()->saveState();
+        std::stringstream sstr;
+        sstr << "simulation_state_" << count;
+        sim.get_sim()->write_state(sstr.str());
+        count++;
     }while(sim.step());
 
 

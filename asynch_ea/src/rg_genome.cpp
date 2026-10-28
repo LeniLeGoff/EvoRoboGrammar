@@ -1,5 +1,7 @@
 #include "ea_rg/rg_genome.hpp"
 #include "ea_rg/rg_controllers.hpp"
+#include "apear/algorithms/homeokinetic_controller.hpp"
+#include "apear/algorithms/cpgrbfhk_controller.hpp"
 
 using namespace ea_rg;
 namespace rd = robot_design;
@@ -301,3 +303,34 @@ void RoboGrammarInd::_create_morphology(){
     _robot = rd::buildRobot(std::static_pointer_cast<RoboGrammarGenome>(_morph_genome)->get_graph());
 }
 
+void HKInd::init(){
+    _morph_genome->init();
+}
+
+
+void HKInd::_create_controller(){
+    int dof = get_robot_dof();
+    if(dof == 0)
+        return;
+    int hk_type = apear_st::getParameter<apear_st::Integer>(_parameters,"#HKType").value;
+    if(hk_type == HKType::HK){
+        _control = std::make_shared<apear::hk::Homeokinesis>(dof+7,dof);
+        _control->set_random_number(_rand_num);
+        _control->set_parameters(_parameters);
+        std::dynamic_pointer_cast<apear::hk::Homeokinesis>(_control)->init();
+        if(apear_st::getParameter<apear_st::Boolean>(_parameters,"#initHKNoise").value)
+            std::dynamic_pointer_cast<apear::hk::Homeokinesis>(_control)->add_noise(
+                apear_st::getParameter<apear_st::Double>(_parameters,"#HKNoiseStrength").value);
+    }else if(hk_type == HKType::CPGRBFHK){
+        _control = std::make_shared<apear::hk::CPGRBFHK>(dof);
+        _control->set_random_number(_rand_num);
+        _control->set_parameters(_parameters);
+        std::dynamic_pointer_cast<apear::hk::CPGRBFHK>(_control)->init();
+        if(apear_st::getParameter<apear_st::Boolean>(_parameters,"#initHKNoise").value)
+            std::dynamic_pointer_cast<apear::hk::CPGRBFHK>(_control)->add_noise(
+                apear_st::getParameter<apear_st::Double>(_parameters,"#HKNoiseStrength").value);
+    }
+}
+void HKInd::set_rules(const std::vector<RoboGrammarGenome::rule_idx_t> &rule_seq){
+    std::dynamic_pointer_cast<RoboGrammarGenome>(_morph_genome)->set_rule_seq(rule_seq);
+}
