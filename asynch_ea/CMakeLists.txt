@@ -24,6 +24,9 @@ target_include_directories(ea_rg PUBLIC
     "/usr/include/eigen3"
     ${BULLET_INCLUDE_DIRS}
 )
+if(WITH_RENDERING)
+    target_compile_definitions(ea_rg PUBLIC RENDERING)
+endif()
 target_compile_options(ea_rg PRIVATE -Wall -Werror)
 
 add_subdirectory(tests)

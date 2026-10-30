@@ -3,8 +3,9 @@
 #include "apear/simulator.hpp"
 #include "ea_rg/rg_genome.hpp"
 #include "robot_design/sim.h"
+#ifdef RENDERING
 #include "robot_design/glfw_viewer.h"
-
+#endif
 
 namespace ea_rg{
 
@@ -39,7 +40,9 @@ private:
     double _max_episode_time = 0;
     double _time = 0;
     double _time_step = 0;
+#ifdef RENDERING
     std::shared_ptr<rd::GLFWViewer> _viewer = nullptr;
+#endif
     int _robot_idx = 0;
 };
 

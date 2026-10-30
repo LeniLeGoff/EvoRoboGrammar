@@ -45,6 +45,7 @@ bool RoboGrammarSimulator::init(const IndPtr &ind){
             std::cout << "self-collision detected in the robot configuration" << std::endl;
     }
     _state = apear::sim_state_t::INITIALIZED;
+#ifdef RENDERING
     if(!_headless){
         if(_viewer != nullptr)
             _viewer.reset();
@@ -59,6 +60,7 @@ bool RoboGrammarSimulator::init(const IndPtr &ind){
         }
         _viewer->camera_params_.distance_ = 2;
     }
+#endif
     return !self_collision;
 }
 
@@ -111,10 +113,12 @@ bool RoboGrammarSimulator::update_robot(const IndPtr &ind, bool normalized){
 
 bool RoboGrammarSimulator::step(){
     _sim->step();
+#ifdef RENDERING
     if(!_headless){
         _viewer->update(_time_step);
         _viewer->render(*_sim);
     }
+#endif
     _time += _time_step;
     if(_max_episode_time < 0)//no time limit
         return true;
