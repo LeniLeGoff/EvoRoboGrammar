@@ -64,12 +64,14 @@ int ted_rec(const Graph &g1, const Graph &g2,const Tree::Ptr &t1,const Tree::Ptr
     //compare nodes connectivity (add or delete edge op)
     dist += abs(static_cast<int>(t1->edges.size() - t2->edges.size()));
     //compare edges type (swap edge type op)
-    const std::vector<EdgeIndex> &shortest = t1->edges.size() < t2->edges.size() ? t1->edges : t2->edges;
-    const std::vector<EdgeIndex> &largest = t1->edges.size() < t2->edges.size() ? t2->edges : t1->edges;
+    const std::vector<EdgeIndex> &shortest = t1->edges.size() <= t2->edges.size() ? t1->edges : t2->edges;
+    const std::vector<EdgeIndex> &largest = t1->edges.size() <= t2->edges.size() ? t2->edges : t1->edges;
+    const robot_design::Graph g_shortest = t1->edges.size() <= t2->edges.size() ? g1 : g2;
+    const robot_design::Graph g_largest = t1->edges.size() <= t2->edges.size() ? g2 : g1;
     for(EdgeIndex ei: shortest){
         bool found_similar = false;
         for(EdgeIndex ej: largest){
-            if(g1.edges_[ei].attrs_.label_ == g2.edges_[ej].attrs_.label_){
+            if(g_shortest.edges_[ei].attrs_.label_ == g_largest.edges_[ej].attrs_.label_){
                 found_similar = true;
                 break;
             }
@@ -82,54 +84,50 @@ int ted_rec(const Graph &g1, const Graph &g2,const Tree::Ptr &t1,const Tree::Ptr
     std::vector<std::pair<int,int>> child_pairing;
     auto itei = edges1.begin();
     int i = 0, j = 0;
-    while(itei != edges1.end() && !edges1.empty()){
-        bool found_similar = false;
+    for(size_t ei = 0; ei < edges1.size(); ei++){
+        int eidx = edges1[ei];
         if(edges2.empty()){
             child_pairing.push_back(std::make_pair(i++,-1));
-            edges1.erase(itei++);
+            edges1.erase(edges1.begin() + ei--);
             break;
         }
-        for(EdgeIndex ej: edges2){
-            if(g1.edges_[*itei].attrs_.label_ == g2.edges_[ej].attrs_.label_){//if exactly the same
+        for(size_t ej = 0; ej < edges2.size(); ej++){
+            int ejdx = edges2[ej];
+            if(g1.edges_[eidx].attrs_.label_ == g2.edges_[ejdx].attrs_.label_){//if exactly the same
                 child_pairing.push_back(std::make_pair(i++,j++));
-                edges1.erase(itei++);
-                edges2.erase(edges2.begin()+ej);
-                found_similar = true;
+                edges1.erase(edges1.begin() + ei--);
+                edges2.erase(edges2.begin() + ej--);
                 break;
             }
-            std::stringstream sstr1(g1.edges_[*itei].attrs_.label_);
+            std::stringstream sstr1(g1.edges_[eidx].attrs_.label_);
             std::string type1;
             std::getline(sstr1,type1,'_');
-            std::stringstream sstr2(g2.edges_[ej].attrs_.label_);
+            std::stringstream sstr2(g2.edges_[ejdx].attrs_.label_);
             std::string type2;
             std::getline(sstr2,type2,'_');
             if(type1 == type2){ //if same type
                 child_pairing.push_back(std::make_pair(i++,j++));
-                edges1.erase(itei++);
-                edges2.erase(edges2.begin()+ej);
-                found_similar = true;
+                edges1.erase(edges1.begin() + ei--);
+                edges2.erase(edges2.begin() + ej--);
                 break;
             }
         }
-        if(!found_similar){
-            itei++;
-        }
-
     }
     //second pass to pair non-similar remaining edges;
-    if(!edges1.empty() && !edges2.empty()){
-        for(EdgeIndex ei: edges1){
-            for(EdgeIndex ej: edges2){
+    for(size_t ei = 0; ei < edges1.size(); ei++){
+        for(size_t ej = 0; ei < edges2.size(); ej++){
+            if(!edges1.empty() && !edges2.empty()){
                 child_pairing.push_back(std::make_pair(i++,j++));
+                edges1.erase(edges1.begin() + ei--);
+                edges2.erase(edges2.begin() + ej--);
+
+            }else if(!edges1.empty()){
+                child_pairing.push_back(std::make_pair(-1,j++));
+                edges2.erase(edges2.begin() + ej--);
+            }else if(!edges2.empty()){
+                child_pairing.push_back(std::make_pair(i++,-1));
+                edges1.erase(edges1.begin() + ei--);
             }
-        }
-    }else if(edges1.empty()){
-        for(EdgeIndex ej: edges2){
-            child_pairing.push_back(std::make_pair(-1,j++));
-        }
-    }else if(edges2.empty()){
-        for(EdgeIndex ei: edges1){
-            child_pairing.push_back(std::make_pair(i++,-1));
         }
     }
 
