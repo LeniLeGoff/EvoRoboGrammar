@@ -59,10 +59,10 @@ int main(int argc, char** argv){
         print::torques(sim);
         // print::pose(sim);
         sleep(time_step);
-        sim.get_sim()->saveState();
-        std::stringstream sstr;
-        sstr << "simulation_state_" << count;
-        sim.get_sim()->write_state(sstr.str());
+        // sim.get_sim()->saveState();
+        // std::stringstream sstr;
+        // sstr << "simulation_state_" << count;
+        // sim.get_sim()->write_state(sstr.str());
         count++;
     }while(sim.step());
 
