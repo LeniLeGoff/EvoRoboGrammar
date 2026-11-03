@@ -12,14 +12,13 @@ add_compile_options(-DEIGEN_DONT_PARALLELIZE)
 set(BULLET_ROOT ${PROJECT_SOURCE_DIR}/extern/bullet3)
 set(BULLET_INCLUDE_DIRS ${BULLET_ROOT}/src ${BULLET_ROOT}/Extras)
 
-
+find_package(Eigen3 REQUIRED)
 
 add_library(ea_rg STATIC ${SOURCES})
-target_link_libraries(ea_rg PUBLIC robotdesign apear tbb)
+target_link_libraries(ea_rg PUBLIC Eigen3::Eigen robotdesign apear tbb)
 target_include_directories(ea_rg PUBLIC
     "include"
     "../core/include"
-    "/usr/include/eigen3"
     ${BULLET_INCLUDE_DIRS}
 )
 if(WITH_RENDERING)
