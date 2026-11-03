@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.0)
-
+cmake_minimum_required(VERSION 3.20)
+if(POLICY CMP0057)
+    cmake_policy(SET CMP0057 NEW)
+endif()
 project(RobotDesign)
 
 
