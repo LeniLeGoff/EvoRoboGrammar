@@ -15,6 +15,6 @@ target_link_libraries(view_environment PUBLIC ea_rg)
 target_include_directories(view_environment PUBLIC ../include/)
 
 
-add_executable(run_saved_simulation run_saved_simulation.cpp)
-target_link_libraries(run_saved_simulation PUBLIC ea_rg)
-target_include_directories(run_saved_simulation PUBLIC ../include/)
+# add_executable(run_saved_simulation run_saved_simulation.cpp)
+# target_link_libraries(run_saved_simulation PUBLIC ea_rg)
+# target_include_directories(run_saved_simulation PUBLIC ../include/)

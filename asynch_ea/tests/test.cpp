@@ -43,6 +43,6 @@ int main(int argc, char** argv){
     dealer.set_ea(res);
     dealer.init(1,false);
     dealer.set_environment<ea_rg::FlatArena>(4,4,ea_rg::fitness::Exploration(param));
-    while(dealer.update_simulators()){}
+    dealer.run();
     return 0;
 }

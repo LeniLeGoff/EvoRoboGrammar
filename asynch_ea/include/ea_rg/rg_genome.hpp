@@ -129,8 +129,11 @@ public:
     }
     void init() override;
     void set_rules(const std::vector<RoboGrammarGenome::rule_idx_t> &);
+    void set_sparsity_score(double score){_sparsity_score = score;}
+    double get_sparsity_score() const{return _sparsity_score;}
 private:
     void _create_controller() override;
+    double _sparsity_score = 0;
 };
 
 }//ea_rg

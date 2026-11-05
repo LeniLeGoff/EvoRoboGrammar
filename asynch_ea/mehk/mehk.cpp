@@ -49,7 +49,6 @@ int main(int argc, char** argv){
 
     //create the evolutionary algorithm: Asynchrounous Morpho-Evolution with Homeokinetic controller
     apear::EA<HKInd>::Ptr ame = std::make_unique<apear::AsyncMorphoEvolution<HKInd,RoboGrammarGenome>>(rand_num,param);
-    ame->init();
 
     //initialise the asynchronous dealer
     dealer.set_ea(ame);
@@ -63,8 +62,7 @@ int main(int argc, char** argv){
     apear_st::saveParameters(apear::logging::log_folder + "/parameters.csv",param);
 
     //run the experiment
-    while (dealer.update_simulators()) {}
-
+    dealer.run();
     return 0;
 }
 

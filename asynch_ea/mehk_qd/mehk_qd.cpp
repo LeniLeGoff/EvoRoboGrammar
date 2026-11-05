@@ -54,7 +54,6 @@ int main(int argc, char** argv){
 
     //create the evolutionary algorithm: Asynchrounous Morpho-Evolution with Quality-Diversity and Homeokinetic controller MEHKQD
     apear::EA<HKInd>::Ptr ame = std::make_unique<MEHKQD>(rand_num,param);
-    ame->init();
 
     //initialise an unstructured archive
     Archive::comparator_t comparator([](const HKInd::Ptr& a, const HKInd::Ptr& b) -> bool{//comparator for quality
@@ -65,12 +64,13 @@ int main(int argc, char** argv){
                                                 std::dynamic_pointer_cast<RoboGrammarGenome>(b->get_morph_genome())->get_graph());
     });
     int selector_type = apear_st::getParameter<apear_st::Integer>(param,"#archiveSelectorType").value;
+    int nbr_ngb = apear_st::getParameter<apear_st::Integer>(param,"#sparsityNbrNeighbors").value;
     if(selector_type == ea_rg::RANDOM)
         dynamic_cast<MEHKQD*>(ame.get())->init_archive(1,distance_fct,comparator,ea_rg::selectors::random);
     else if(selector_type == ea_rg::SPARSITY)
-        dynamic_cast<MEHKQD*>(ame.get())->init_archive(1,distance_fct,comparator,ea_rg::selectors::sparsity);
+        dynamic_cast<MEHKQD*>(ame.get())->init_archive(1,distance_fct,comparator,ea_rg::selectors::sparsity,nbr_ngb);
     else if(selector_type == ea_rg::PARETO)
-            dynamic_cast<MEHKQD*>(ame.get())->init_archive(1,distance_fct,comparator,ea_rg::selectors::pareto_tournament);
+        dynamic_cast<MEHKQD*>(ame.get())->init_archive(1,distance_fct,comparator,ea_rg::selectors::pareto_tournament,nbr_ngb);
 
     //initialise the asynchronous dealer
     dealer.set_ea(ame);
@@ -84,78 +84,91 @@ int main(int argc, char** argv){
     apear_st::saveParameters(apear::logging::log_folder + "/parameters.csv",param);
 
     //run the experiment
-    while (dealer.update_simulators()) {}
+    // do{
+    //     dealer.update_simulators();
+    // }while(dealer.update_ea());
+    dealer.run_threaded_updates();
 
     return 0;
 }
 apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::random = apear::selectors::random<HKInd::Ptr>;
-apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::sparsity = [](const std::vector<HKInd::Ptr>& solutions,const apear::misc::RandNum::Ptr & rand_num) -> const HKInd::Ptr &{
-    if(solutions.size() == 1)
-        return solutions.at(0);
-    std::vector<float> sparsity_scores;
-    std::vector<int> distances;
-    for(const HKInd::Ptr &ind1: solutions){
-        for(const HKInd::Ptr &ind2: solutions){
-            if(ind1->get_morph_genome()->id() == ind2->get_morph_genome()->id())
-                continue;
-            distances.push_back(robot_design::tree_edit_distance(std::dynamic_pointer_cast<RoboGrammarGenome>(ind1->get_morph_genome())->get_graph(),
-                                                                 std::dynamic_pointer_cast<RoboGrammarGenome>(ind2->get_morph_genome())->get_graph()));
-            std::sort(distances.begin(),distances.end());
-            float sparsity_score = 0;
-            size_t nbr_ngb = std::min(static_cast<size_t>(15),distances.size());
-            for(size_t i = 0; i < nbr_ngb; i++){
-                sparsity_score += static_cast<float>(distances[i]);
-            }
-            sparsity_scores.push_back(sparsity_score/static_cast<float>(nbr_ngb));
+apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::sparsity = [](const std::vector<HKInd::Ptr>& solutions,const apear::misc::RandNum::Ptr & rand_num, std::vector<HKInd::Ptr>& selection){
+    std::cout << "SPARSITY SELECTOR" << std::endl;
+    for(size_t i = 0; i < selection.size(); i++){
+        if(solutions.size() == 1){
+            selection[i] = solutions.at(0);
+            continue;
         }
+        std::vector<double> sparsity_scores;
+        std::vector<int> distances;
+        for(const HKInd::Ptr &ind1: solutions){
+            sparsity_scores.push_back(ind1->get_sparsity_score());
+        }
+        std::vector<size_t> indices(sparsity_scores.size());
+        std::iota(indices.begin(),indices.end(),0);
+        std::sort(indices.begin(),indices.end(),[&](size_t i,size_t j){return sparsity_scores[i] > sparsity_scores[j];});
+        selection[i] = solutions[indices[0]];
     }
-    std::vector<size_t> indices(sparsity_scores.size());
-    std::iota(indices.begin(),indices.end(),0);
-    std::sort(indices.begin(),indices.end(),[&](size_t i,size_t j){return sparsity_scores[i] > sparsity_scores[j];});
-    return solutions[indices[0]];
 };
 
-apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::pareto_tournament = [](const std::vector<HKInd::Ptr>& solutions,const apear::misc::RandNum::Ptr & rand_num) -> const HKInd::Ptr &{
-    if(solutions.size() == 1)
-        return solutions.at(0);
-    std::vector<float> sparsity_scores;
-    std::vector<int> distances;
-    for(const HKInd::Ptr &ind1: solutions){
-        for(const HKInd::Ptr &ind2: solutions){
+apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::pareto_tournament = [](const std::vector<HKInd::Ptr>& solutions,const apear::misc::RandNum::Ptr & rand_num, std::vector<HKInd::Ptr>& selection){
+    std::cout << "PARETO TOURNAMENT SELECTOR" << std::endl;
+    if(solutions.size() == 1){
+        for(size_t s = 0; s < selection.size(); s++)
+
+            selection[s] = solutions.at(0);
+        return;
+    }
+    std::cout << "Computing Pareto front ..." << std::endl;
+    std::vector<size_t> pareto_front;
+    std::vector<bool> undominated(solutions.size(),true);
+    bool dominating_sparsity = false;
+    bool dominating_quality = false;
+    for(size_t i = 0; i < solutions.size(); i++){
+        for(size_t j = i; j < solutions.size(); j++){
+            if(undominated[i] == false)
+                break;
+            if(undominated[j] == false)
+                continue;
+            const HKInd::Ptr &ind1 = solutions.at(i);
+            const HKInd::Ptr &ind2 = solutions.at(j);
             if(ind1->get_morph_genome()->id() == ind2->get_morph_genome()->id())
                 continue;
-            distances.push_back(robot_design::tree_edit_distance(std::dynamic_pointer_cast<RoboGrammarGenome>(ind1->get_morph_genome())->get_graph(),
-                                                                 std::dynamic_pointer_cast<RoboGrammarGenome>(ind2->get_morph_genome())->get_graph()));
-            std::sort(distances.begin(),distances.end());
-            float sparsity_score = 0;
-            size_t nbr_ngb = std::min(static_cast<size_t>(15),distances.size());
-            for(size_t i = 0; i < nbr_ngb; i++){
-                sparsity_score += static_cast<float>(distances[i]);
-            }
-            sparsity_scores.push_back(sparsity_score/static_cast<float>(nbr_ngb));
+            std::cout << "ind1: " << ind1->get_morph_genome()->id() << " fitness: " << ind1->get_objectives()[0] << " sparsity: " << ind1->get_sparsity_score() << " vs "
+                      << "ind2: " << ind2->get_morph_genome()->id() << " fitness: " << ind2->get_objectives()[0] << " sparsity: " << ind2->get_sparsity_score() << std::endl;
+            dominating_quality = false;
+            dominating_sparsity = false;
+            if(ind1->get_objectives()[0] > ind2->get_objectives()[0])
+                dominating_quality = true;
+            if(ind1->get_sparsity_score() > ind2->get_sparsity_score())
+                dominating_sparsity = true;
+            if(dominating_quality && dominating_sparsity)
+                undominated[j] = false;
+            dominating_quality = false;
+            dominating_sparsity = false;
+            if(ind2->get_objectives()[0] > ind1->get_objectives()[0])
+                dominating_quality = true;
+            if(ind2->get_sparsity_score() > ind1->get_sparsity_score())
+                dominating_sparsity = true;
+            if(dominating_quality && dominating_sparsity)
+                undominated[i] = false;
         }
     }
-    std::vector<size_t> pareto_front;
-    for(size_t i = 0; i < solutions.size(); i++){
-        bool dominating = true;
-        for(size_t j = 0; j < solutions.size(); j++){
-            if(solutions[i]->get_morph_genome()->id() == solutions[j]->get_morph_genome()->id())
-                continue;
-            if(solutions[i]->get_objectives()[0] < solutions[j]->get_objectives()[0] ||
-                sparsity_scores[i] < sparsity_scores[j]){
-                dominating = false;
-                break;
-            }
-        }
-        if(dominating)
+    for(size_t i = 0; i < undominated.size(); i++){
+        if(undominated[i])
             pareto_front.push_back(i);
     }
-    if(pareto_front.empty()){
-        int index = rand_num->rand_int(0, static_cast<int>(solutions.size()) - 1);
-        return solutions.at(index);
+    for(size_t s = 0; s < selection.size(); s++){
+        if(pareto_front.empty()){
+            std::cout << "Pareto front is empty, selecting random solution ..." << std::endl;
+            int index = rand_num->rand_int(0, static_cast<int>(solutions.size()) - 1);
+            selection[s] = solutions.at(index);
+            continue;
+        }
+        std::cout << "Pareto front size: " << pareto_front.size() << std::endl;
+        int index = rand_num->rand_int(0, static_cast<int>(pareto_front.size()) - 1);
+        selection[s] = solutions.at(pareto_front[index]);
     }
-    int index = rand_num->rand_int(0, static_cast<int>(pareto_front.size()) - 1);
-    return solutions.at(pareto_front[index]);
 };
 
 void ParentsLog::saveLog(const apear::EA<HKInd>::Ptr &ea){
