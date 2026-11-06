@@ -9,7 +9,7 @@
 #initOrientation,sequence_double,0;0;1;0
 #evaluationOrder,int,0
 
-#populationSize,int,100
+#populationSize,int,10
 #maxNbrEval,int,10000
 
 
@@ -20,8 +20,11 @@
 #probGrow,double,0.8
 #probPrune,double,0
 #probSwap,double,0.2
-#archiveSelectorType,int,2
+#archiveSelectorType,int,1
 #sparsityNbrNeighbors,int,5
+#paretoGoalTolerance,double,5
+#paretoSparsityTolerance,double,0.5
+#sparsityTopNumber,int,20
 
 #inputNoiseStrength,double,0.1
 #outputNoiseStrength,double,0.1
@@ -43,7 +46,7 @@
 #stabilityReward,double,1
 #nbrNearestNeighbours,int,20
 
-#logRepository,string,/media/leni/DATADRIVE1/evorobo_logs
+#logRepository,string,/home/leni/evorobo_logs
 #genomeLogFile,string,genomes.csv
 #fitnessLogFile,string,fitnesses.csv
 #parentsLogFile,string,parent_pool.csv

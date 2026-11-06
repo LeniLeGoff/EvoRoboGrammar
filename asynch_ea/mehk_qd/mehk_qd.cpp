@@ -12,6 +12,9 @@ namespace apear_st = apear::settings;
 using Archive = apear::UnstructuredArchive<HKInd::Ptr,int>;
 using MEHKQD = apear::AsyncMorphoEvolutionQD<HKInd,RoboGrammarGenome,Archive>;
 
+double selectors::pareto_goal_tolerance = 0;
+double selectors::pareto_sparsity_tolerance = 0;
+int selectors::sparsity_top_nbr = 1;
 
 int main(int argc, char** argv){
     if(argc < 4){
@@ -67,10 +70,15 @@ int main(int argc, char** argv){
     int nbr_ngb = apear_st::getParameter<apear_st::Integer>(param,"#sparsityNbrNeighbors").value;
     if(selector_type == ea_rg::RANDOM)
         dynamic_cast<MEHKQD*>(ame.get())->init_archive(1,distance_fct,comparator,ea_rg::selectors::random);
-    else if(selector_type == ea_rg::SPARSITY)
+    else if(selector_type == ea_rg::SPARSITY){
+        selectors::sparsity_top_nbr = apear_st::getParameter<apear_st::Integer>(param,"#sparsityTopNumber").value;
         dynamic_cast<MEHKQD*>(ame.get())->init_archive(1,distance_fct,comparator,ea_rg::selectors::sparsity,nbr_ngb);
-    else if(selector_type == ea_rg::PARETO)
+    }
+    else if(selector_type == ea_rg::PARETO){
+        selectors::pareto_goal_tolerance = apear_st::getParameter<apear_st::Double>(param,"#paretoGoalTolerance").value;
+        selectors::pareto_sparsity_tolerance = apear_st::getParameter<apear_st::Double>(param,"#paretoSparsityTolerance").value;
         dynamic_cast<MEHKQD*>(ame.get())->init_archive(1,distance_fct,comparator,ea_rg::selectors::pareto_tournament,nbr_ngb);
+    }
 
     //initialise the asynchronous dealer
     dealer.set_ea(ame);
@@ -107,7 +115,12 @@ apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::sparsity = [](const s
         std::vector<size_t> indices(sparsity_scores.size());
         std::iota(indices.begin(),indices.end(),0);
         std::sort(indices.begin(),indices.end(),[&](size_t i,size_t j){return sparsity_scores[i] > sparsity_scores[j];});
-        selection[i] = solutions[indices[0]];
+        if(selectors::sparsity_top_nbr == 0){
+            selection[i] = solutions[indices[0]];
+            continue;
+        }
+        int index = rand_num->rand_int(0, std::min(selectors::sparsity_top_nbr-1,static_cast<int>(indices.size()-1)));
+        selection[i] = solutions[indices[index]];
     }
 };
 
@@ -138,17 +151,17 @@ apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::pareto_tournament = [
                       << "ind2: " << ind2->get_morph_genome()->id() << " fitness: " << ind2->get_objectives()[0] << " sparsity: " << ind2->get_sparsity_score() << std::endl;
             dominating_quality = false;
             dominating_sparsity = false;
-            if(ind1->get_objectives()[0] > ind2->get_objectives()[0])
+            if(ind1->get_objectives()[0] > ind2->get_objectives()[0] + selectors::pareto_goal_tolerance)
                 dominating_quality = true;
-            if(ind1->get_sparsity_score() > ind2->get_sparsity_score())
+            if(ind1->get_sparsity_score() > ind2->get_sparsity_score() + selectors::pareto_sparsity_tolerance)
                 dominating_sparsity = true;
             if(dominating_quality && dominating_sparsity)
                 undominated[j] = false;
             dominating_quality = false;
             dominating_sparsity = false;
-            if(ind2->get_objectives()[0] > ind1->get_objectives()[0])
+            if(ind2->get_objectives()[0] > ind1->get_objectives()[0] + selectors::pareto_goal_tolerance)
                 dominating_quality = true;
-            if(ind2->get_sparsity_score() > ind1->get_sparsity_score())
+            if(ind2->get_sparsity_score() > ind1->get_sparsity_score() + selectors::pareto_sparsity_tolerance)
                 dominating_sparsity = true;
             if(dominating_quality && dominating_sparsity)
                 undominated[i] = false;

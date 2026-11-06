@@ -18,7 +18,10 @@ enum SelectorType{
 
 struct selectors {
     static apear::selectors::selector_t<HKInd::Ptr> random;
+    static int sparsity_top_nbr;
     static apear::selectors::selector_t<HKInd::Ptr> sparsity;
+    static double pareto_goal_tolerance;
+    static double pareto_sparsity_tolerance;
     static apear::selectors::selector_t<HKInd::Ptr> pareto_tournament;
 };
 
