@@ -77,6 +77,13 @@ bool MovementExploStability::update(RoboGrammarSimulator &sim){
     rd::Vector3 position;
     rd::Quaternion orientation;
     sim.sim()->getRobotPositionAndOrientation(sim.get_robot_idx(),position,orientation);
+
+    if(position[1] < -0.01){
+        if(verbose)
+            std::cout << "robot out of bounds with position " << position.transpose() << std::endl;
+        return false;
+    }
+
     Eigen::VectorXd pose(7);
     pose << position[0]/x_norm,position[1],position[2]/y_norm,
         orientation.x(),orientation.y(),orientation.z(),orientation.w();

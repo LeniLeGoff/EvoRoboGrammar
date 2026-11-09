@@ -137,6 +137,23 @@ apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::pareto_tournament = [
     std::vector<bool> undominated(solutions.size(),true);
     bool dominating_sparsity = false;
     bool dominating_quality = false;
+    double goal_average = 0;
+    double sparsity_average = 0;
+    for(const HKInd::Ptr &ind: solutions){
+        goal_average += ind->get_objectives()[0];
+        sparsity_average += static_cast<double>(ind->get_sparsity_score());
+    }
+    goal_average = goal_average/static_cast<double>(solutions.size());
+    sparsity_average = sparsity_average/static_cast<double>(solutions.size());
+    double goal_stddev = 0;
+    double sparsity_stddev = 0;
+    for(const HKInd::Ptr &ind: solutions){
+        goal_stddev += (ind->get_objectives()[0] - goal_average)*(ind->get_objectives()[0] - goal_average);
+        sparsity_stddev += (static_cast<double>(ind->get_sparsity_score()) - sparsity_average)*(static_cast<double>(ind->get_sparsity_score()) - sparsity_average);
+    }
+    goal_stddev = std::sqrt(goal_stddev/static_cast<double>(solutions.size()));
+    sparsity_stddev = std::sqrt(sparsity_stddev/static_cast<double>(solutions.size()));
+    std::cout << "goal stddev: " << goal_stddev << " sparsity stddev " << sparsity_stddev << std::endl;
     for(size_t i = 0; i < solutions.size(); i++){
         for(size_t j = i; j < solutions.size(); j++){
             if(undominated[i] == false)
@@ -151,17 +168,17 @@ apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::pareto_tournament = [
                       << "ind2: " << ind2->get_morph_genome()->id() << " fitness: " << ind2->get_objectives()[0] << " sparsity: " << ind2->get_sparsity_score() << std::endl;
             dominating_quality = false;
             dominating_sparsity = false;
-            if(ind1->get_objectives()[0] > ind2->get_objectives()[0] + selectors::pareto_goal_tolerance)
+            if(ind1->get_objectives()[0] > ind2->get_objectives()[0] + goal_stddev)
                 dominating_quality = true;
-            if(ind1->get_sparsity_score() > ind2->get_sparsity_score() + selectors::pareto_sparsity_tolerance)
+            if(ind1->get_sparsity_score() > ind2->get_sparsity_score() + sparsity_stddev)
                 dominating_sparsity = true;
             if(dominating_quality && dominating_sparsity)
                 undominated[j] = false;
             dominating_quality = false;
             dominating_sparsity = false;
-            if(ind2->get_objectives()[0] > ind1->get_objectives()[0] + selectors::pareto_goal_tolerance)
+            if(ind2->get_objectives()[0] > ind1->get_objectives()[0] + goal_stddev)
                 dominating_quality = true;
-            if(ind2->get_sparsity_score() > ind1->get_sparsity_score() + selectors::pareto_sparsity_tolerance)
+            if(ind2->get_sparsity_score() > ind1->get_sparsity_score() + sparsity_stddev)
                 dominating_sparsity = true;
             if(dominating_quality && dominating_sparsity)
                 undominated[i] = false;
