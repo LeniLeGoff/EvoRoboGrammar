@@ -11,3 +11,7 @@ target_include_directories(view_random_robot PUBLIC ../include/)
 add_executable(test_robot_distance test_robot_distance.cpp)
 target_link_libraries(test_robot_distance PUBLIC ea_rg robotdesign)
 target_include_directories(test_robot_distance PUBLIC ../include/)
+
+add_executable(test_load_archive test_load_archive.cpp)
+target_link_libraries(test_load_archive PUBLIC ea_rg robotdesign)
+target_include_directories(test_load_archive PUBLIC ../ ../include/)

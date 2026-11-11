@@ -80,7 +80,7 @@ int main(int argc, char** argv){
     apear::misc::RandNum::Ptr rand_num = std::make_shared<apear::misc::RandNum>(seed);
 
     // parameters->emplace("#initPosition",std::make_shared<apear::settings::Sequence<double>>(std::vector<double>({0,10,0})));
-    std::vector<RoboGrammarGenome::rule_idx_t> rule_seq;
+    std::vector<rule_idx_t> rule_seq;
     for(int i = 3; i < argc; i++){
         std::string arg(argv[i]);
         std::vector<std::string> tokens;

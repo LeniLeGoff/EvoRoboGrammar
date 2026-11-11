@@ -28,7 +28,7 @@ int main(int argc, char** argv){
     }
     apear::misc::RandNum::Ptr rand_num = std::make_shared<apear::misc::RandNum>(seed);
 
-    std::vector<RoboGrammarGenome::rule_idx_t> rule_seq;
+    std::vector<rule_idx_t> rule_seq;
     std::vector<int> rules = settings::getParameter<settings::Sequence<int>>(parameters,"#robotRules").value;
     if(rules.size()%2 != 0){
         std::cout << "invalid rule sequence format, needs an even number of rules" << std::endl;

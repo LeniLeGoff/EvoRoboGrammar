@@ -100,4 +100,5 @@ void initGraph(py::module &m) {
   m.def("find_matches", &rd::findMatches);
   m.def("check_rule_applicability", &rd::checkRuleApplicability);
   m.def("apply_rule", &rd::applyRule);
+  m.def("tree_edit_distance", &rd::tree_edit_distance);
 }

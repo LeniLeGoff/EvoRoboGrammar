@@ -169,7 +169,7 @@ void RoboGrammarGenome::_swap_rule(){
     _graph = _make_graph(_rule_seq);
 }
 
-std::vector<RoboGrammarGenome::rule_idx_t> RoboGrammarGenome::_find_swappable_rules(const rule_idx_t &rule_idx){
+std::vector<rule_idx_t> RoboGrammarGenome::_find_swappable_rules(const rule_idx_t &rule_idx){
     std::vector<rule_idx_t> swappable_rules;
     rd::Graph rule_lhs = _grammar[rule_idx.first][rule_idx.second].lhs_;
     for(size_t idx = 0; idx < _grammar[rule_idx.first].size(); idx++){
@@ -294,7 +294,7 @@ int RoboGrammarInd::get_robot_dof() const{
     return dof;
 }
 
-void RoboGrammarInd::set_rules(const std::vector<RoboGrammarGenome::rule_idx_t> &rule_seq){
+void RoboGrammarInd::set_rules(const std::vector<rule_idx_t> &rule_seq){
     std::dynamic_pointer_cast<RoboGrammarGenome>(_morph_genome)->set_rule_seq(rule_seq);
     std::dynamic_pointer_cast<RoboGrammarGenome>(_morph_genome)->make_graph();
 }
@@ -331,6 +331,7 @@ void HKInd::_create_controller(){
                 apear_st::getParameter<apear_st::Double>(_parameters,"#HKNoiseStrength").value);
     }
 }
-void HKInd::set_rules(const std::vector<RoboGrammarGenome::rule_idx_t> &rule_seq){
+void HKInd::set_rules(const std::vector<rule_idx_t> &rule_seq){
     std::dynamic_pointer_cast<RoboGrammarGenome>(_morph_genome)->set_rule_seq(rule_seq);
 }
+

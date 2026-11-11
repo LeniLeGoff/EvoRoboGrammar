@@ -1,14 +1,17 @@
+#include <fstream>
+#include <string>
+#include <memory>
+
 #include "mehk_qd.hpp"
 #include "apear/async_dealer.hpp"
 #include "apear/ame_qd.hpp"
+#include "apear/misc/utilities.hpp"
 #include "ea_rg/tasks.hpp"
 #include "ea_rg/loggings.hpp"
 #include "robot_design/graph.h"
 
-
 using namespace ea_rg;
 namespace apear_st = apear::settings;
-
 using Archive = apear::UnstructuredArchive<HKInd::Ptr,int>;
 using MEHKQD = apear::AsyncMorphoEvolutionQD<HKInd,RoboGrammarGenome,Archive>;
 
@@ -98,6 +101,7 @@ int main(int argc, char** argv){
     dealer.run_threaded_updates();
 
     return 0;
+
 }
 apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::random = apear::selectors::random<HKInd::Ptr>;
 apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::sparsity = [](const std::vector<HKInd::Ptr>& solutions,const apear::misc::RandNum::Ptr & rand_num, std::vector<HKInd::Ptr>& selection){
@@ -224,4 +228,3 @@ void ParentsLog::saveLog(const apear::EA<HKInd>::Ptr &ea){
     ofs << sstr.str() << std::endl;
     ofs.close();
 }
-

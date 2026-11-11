@@ -4,8 +4,8 @@
 
 using namespace ea_rg;
 
-std::vector<RoboGrammarGenome::rule_idx_t> extract_rule_seq(char** argv,int argc){
-    std::vector<RoboGrammarGenome::rule_idx_t> rule_seq;
+std::vector<rule_idx_t> extract_rule_seq(char** argv,int argc){
+    std::vector<rule_idx_t> rule_seq;
     for(int i = 0; i < argc; i++){
         std::string arg(argv[i]);
         if(arg == "-")
@@ -29,8 +29,8 @@ int main(int argc, char** argv){
                   << "\targs: rule sequences" << std::endl;
         return 1;
     }
-    std::vector<RoboGrammarGenome::rule_idx_t> rule_seq1 = extract_rule_seq(argv+2,argc-2);
-    std::vector<RoboGrammarGenome::rule_idx_t> rule_seq2 = extract_rule_seq(argv+3+rule_seq1.size(),
+    std::vector<rule_idx_t> rule_seq1 = extract_rule_seq(argv+2,argc-2);
+    std::vector<rule_idx_t> rule_seq2 = extract_rule_seq(argv+3+rule_seq1.size(),
                                                                             argc-3-rule_seq1.size());
 
     RoboGrammarGenome rgg1;

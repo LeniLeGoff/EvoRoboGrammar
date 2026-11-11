@@ -8,12 +8,12 @@
 namespace ea_rg{
 
 namespace rd = robot_design;
+using rule_idx_t = std::pair<size_t,size_t>; //first: rule type, second: rule idx in the type
 
 class RoboGrammarGenome: public apear::Genome{
 public:
     typedef std::shared_ptr<RoboGrammarGenome> Ptr;
     typedef std::shared_ptr<const RoboGrammarGenome> ConstPtr;
-    using rule_idx_t = std::pair<size_t,size_t>; //first: rule type, second: rule idx in the type
 
     RoboGrammarGenome() : apear::Genome(){
         _id = 0;
@@ -96,14 +96,23 @@ public:
     }
     RoboGrammarInd(const RoboGrammarGenome::Ptr &morph_gen,const apear::Genome::Ptr &ctrl_gen) :
         apear::Individual(morph_gen,ctrl_gen){}
+
     RoboGrammarInd(const RoboGrammarInd &ind) : apear::Individual(ind), _robot(ind._robot){}
+
+    apear::Individual::Ptr clone() override{
+        return std::make_shared<RoboGrammarInd>(*this);
+    }
 
     int get_robot_dof() const;
     const rd::Robot &get_robot() const{return _robot;}
-    void set_rules(const std::vector<RoboGrammarGenome::rule_idx_t> &rule_seq);
+    void set_rules(const std::vector<rule_idx_t> &rule_seq);
+    void set_sparsity_score(double score){_sparsity_score = score;}
+    double get_sparsity_score() const{return _sparsity_score;}
 protected:
     void _create_morphology() override;
+    void _create_controller() override{}
     rd::Robot _robot;
+    double _sparsity_score = 0;
 };
 
 enum HKType{
@@ -128,12 +137,13 @@ public:
         return std::make_shared<HKInd>(*this);
     }
     void init() override;
-    void set_rules(const std::vector<RoboGrammarGenome::rule_idx_t> &);
-    void set_sparsity_score(double score){_sparsity_score = score;}
-    double get_sparsity_score() const{return _sparsity_score;}
+    void set_rules(const std::vector<rule_idx_t> &);
+
 private:
     void _create_controller() override;
-    double _sparsity_score = 0;
 };
+
+
+
 
 }//ea_rg

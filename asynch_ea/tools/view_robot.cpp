@@ -31,7 +31,7 @@ public:
     void init() override{
         _morph_genome->init();
     }
-    void set_rules(const std::vector<RoboGrammarGenome::rule_idx_t> &rule_seq){
+    void set_rules(const std::vector<rule_idx_t> &rule_seq){
         std::dynamic_pointer_cast<RoboGrammarGenome>(_morph_genome)->set_rule_seq(rule_seq);
         std::dynamic_pointer_cast<RoboGrammarGenome>(_morph_genome)->make_graph();
     }
@@ -58,7 +58,7 @@ int main(int argc, char** argv){
     apear::settings::setParameter(parameters,"#maxEpisodeTime",std::make_shared<apear::settings::Double>(-1));
     apear::settings::setParameter(parameters,"#withRandomControl",std::make_shared<apear::settings::Boolean>(std::string(argv[2])=="1"));
     apear::settings::setParameter(parameters,"#ctrlFreq",std::make_shared<apear::settings::Double>(0.6));
-    std::vector<RoboGrammarGenome::rule_idx_t> rule_seq;
+    std::vector<rule_idx_t> rule_seq;
     for(int i = 3; i < argc; i++){
         std::string arg(argv[i]);
         std::vector<std::string> tokens;
