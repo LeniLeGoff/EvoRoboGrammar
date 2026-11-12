@@ -106,19 +106,21 @@ int main(int argc, char** argv){
 apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::random = apear::selectors::random<HKInd::Ptr>;
 apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::sparsity = [](const std::vector<HKInd::Ptr>& solutions,const apear::misc::RandNum::Ptr & rand_num, std::vector<HKInd::Ptr>& selection){
     std::cout << "SPARSITY SELECTOR" << std::endl;
-    for(size_t i = 0; i < selection.size(); i++){
-        if(solutions.size() == 1){
+    if(solutions.size() == 1){
+        for(size_t i = 0; i < selection.size(); i++)
             selection[i] = solutions.at(0);
-            continue;
-        }
-        std::vector<double> sparsity_scores;
-        std::vector<int> distances;
-        for(const HKInd::Ptr &ind1: solutions){
-            sparsity_scores.push_back(ind1->get_sparsity_score());
-        }
-        std::vector<size_t> indices(sparsity_scores.size());
-        std::iota(indices.begin(),indices.end(),0);
-        std::sort(indices.begin(),indices.end(),[&](size_t i,size_t j){return sparsity_scores[i] > sparsity_scores[j];});
+        return;
+    }
+
+    std::vector<double> sparsity_scores;
+    std::vector<int> distances;
+    for(const HKInd::Ptr &ind1: solutions){
+        sparsity_scores.push_back(ind1->get_sparsity_score());
+    }
+    std::vector<size_t> indices(sparsity_scores.size());
+    std::iota(indices.begin(),indices.end(),0);
+    std::sort(indices.begin(),indices.end(),[&](size_t i,size_t j){return sparsity_scores[i] > sparsity_scores[j];});
+    for(size_t i = 0; i < selection.size(); i++){
         if(selectors::sparsity_top_nbr == 0){
             selection[i] = solutions[indices[0]];
             continue;
@@ -217,9 +219,9 @@ void ParentsLog::saveLog(const apear::EA<HKInd>::Ptr &ea){
             line = l;
 
     std::stringstream sstr;
-    sstr << inds.front()->get_morph_genome()->id();
+    sstr << inds.front()->get_morph_genome()->id() << "," << inds.front()->get_objectives()[0] << "," << inds.front()->get_sparsity_score();
     for(size_t i = 1; i < inds.size(); i++)
-        sstr << "," << inds.at(i)->get_morph_genome()->id();
+        sstr << ";" << inds.at(i)->get_morph_genome()->id() << "," << inds.at(i)->get_objectives()[0] << "," << inds.at(i)->get_sparsity_score();
     if(!line.empty() && sstr.str() == line) //genome pool didn't change
         return;
     std::ofstream ofs;

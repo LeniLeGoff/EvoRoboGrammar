@@ -108,6 +108,9 @@ public:
     void set_rules(const std::vector<rule_idx_t> &rule_seq);
     void set_sparsity_score(double score){_sparsity_score = score;}
     double get_sparsity_score() const{return _sparsity_score;}
+
+    std::vector<double> nn_distances;
+    void update_sparsity_score(double distance);
 protected:
     void _create_morphology() override;
     void _create_controller() override{}
@@ -139,8 +142,10 @@ public:
     void init() override;
     void set_rules(const std::vector<rule_idx_t> &);
 
+
 private:
     void _create_controller() override;
+
 };
 
 

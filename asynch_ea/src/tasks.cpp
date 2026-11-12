@@ -78,7 +78,7 @@ bool MovementExploStability::update(RoboGrammarSimulator &sim){
     rd::Quaternion orientation;
     sim.sim()->getRobotPositionAndOrientation(sim.get_robot_idx(),position,orientation);
 
-    if(position[1] < -0.01){
+    if(position[1] < -0.01 || position[1] > 1.0 || position[0] < -x_norm || position[0] > x_norm || position[2] < -y_norm || position[2] > y_norm){
         if(verbose)
             std::cout << "robot out of bounds with position " << position.transpose() << std::endl;
         return false;

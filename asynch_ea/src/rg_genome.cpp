@@ -303,6 +303,20 @@ void RoboGrammarInd::_create_morphology(){
     _robot = rd::buildRobot(std::static_pointer_cast<RoboGrammarGenome>(_morph_genome)->get_graph());
 }
 
+void RoboGrammarInd::update_sparsity_score(double distance){
+    if(nn_distances.size() < static_cast<size_t>(apear_st::getParameter<apear_st::Integer>(_parameters,"#sparsityNbrNeighbors").value)){
+        nn_distances.push_back(distance);
+    }else{
+        std::sort(nn_distances.begin(),nn_distances.end());
+        nn_distances[0] = distance;
+    }
+    _sparsity_score = 0;
+    for(double d: nn_distances)
+        _sparsity_score += d;
+    _sparsity_score /= static_cast<double>(nn_distances.size());
+}
+
+
 void HKInd::init(){
     _morph_genome->init();
 }
