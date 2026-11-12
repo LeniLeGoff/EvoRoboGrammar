@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(RobotDesign)
 
+add_compile_options("$<$<CONFIG:RELEASE>:-O3>$<$<CONFIG:DEBUG>:-O0>")
 
 # Use double precision in Bullet
 add_compile_options(-DBT_USE_DOUBLE_PRECISION)
