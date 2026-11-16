@@ -16,7 +16,8 @@ using selector_t = apear::selectors::selector_t<RoboGrammarInd::Ptr>;
 PYBIND11_MODULE(py_async_ea, m, py::mod_gil_not_used()){
     py::class_<RoboGrammarGenome,std::shared_ptr<RoboGrammarGenome>>(m,"RoboGrammarGenome")
         .def(py::init<>())
-        .def("get_graph",&RoboGrammarGenome::get_graph);
+        .def("get_graph",&RoboGrammarGenome::get_graph)
+        .def("get_rule_seq",&RoboGrammarGenome::get_rule_seq);
 
     py::class_<RoboGrammarInd,std::shared_ptr<RoboGrammarInd>>(m,"RoboGrammarInd")
         .def(py::init<>())
@@ -32,9 +33,9 @@ PYBIND11_MODULE(py_async_ea, m, py::mod_gil_not_used()){
         .def("compute_sparsity_score",&UArchive::compute_sparsity_scores)
         .def("get_solutions",&UArchive::get_solutions);
     m.def("load_archive",&ea_rg::load_archive<RoboGrammarInd>);
-
     py::class_<ea_rg::selectors>(m,"selectors")
         .def_readonly_static("random",&ea_rg::selectors::random)
         .def_readonly_static("sparsity",&ea_rg::selectors::sparsity)
-        .def_readonly_static("pareto_tournament",&ea_rg::selectors::pareto_tournament);
+        .def_readonly_static("pareto_tournament",&ea_rg::selectors::pareto_tournament)
+        .def_readonly_static("pareto",&ea_rg::selectors::pareto<RoboGrammarInd::Ptr>);
 }

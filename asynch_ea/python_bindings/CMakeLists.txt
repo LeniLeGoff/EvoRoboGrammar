@@ -1,5 +1,10 @@
 set(CMAKE_CXX_STANDARD 17)
 
+set(Python3_FIND_VIRTUALENV "FIRST")
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+
+message("${Python3_FIND_VIRTUALENV}")
+
 set(LIBRARY_NAME py_async_ea)
 find_package(pybind11)
 #set(PYBIND11_ROOT ${PROJECT_SOURCE_DIR}/extern/pybind11)
@@ -25,4 +30,10 @@ target_link_libraries(${LIBRARY_NAME} PRIVATE
     robotdesign ea_rg apear
 )
 target_include_directories(${LIBRARY_NAME} PUBLIC ../ ../include)
-install(TARGETS ${LIBRARY_NAME} DESTINATION lib/.)
+
+
+install(TARGETS ${LIBRARY_NAME} 
+        COMPONENT python
+        LIBRARY DESTINATION "${${Python3_SITELIB}}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages/${LIBRARY_NAME}"
+        ARCHIVE DESTINATION "lib"
+        RUNTIME DESTINATION "${${Python3_SITELIB}}/bin")

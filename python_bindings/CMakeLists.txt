@@ -1,5 +1,8 @@
 set(CMAKE_CXX_STANDARD 17)
 
+set(Python3_FIND_VIRTUALENV "FIRST")
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+
 set(LIBRARY_NAME pyrobotdesign)
 find_package(pybind11)
 #set(PYBIND11_ROOT ${PROJECT_SOURCE_DIR}/extern/pybind11)
@@ -31,3 +34,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py
 target_link_libraries(${LIBRARY_NAME} PRIVATE
     robotdesign
 )
+install(TARGETS ${LIBRARY_NAME} 
+        COMPONENT python
+        LIBRARY DESTINATION "${${Python3_SITELIB}}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages/${LIBRARY_NAME}"
+        ARCHIVE DESTINATION "lib"
+        RUNTIME DESTINATION "${${Python3_SITELIB}}/bin")

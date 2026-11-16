@@ -10,3 +10,4 @@ torchrl
 gymnasium
 -e design_search
 -e build/python_bindings
+-e build/async_ea/python_bindings

@@ -8,5 +8,5 @@ setup(
     name='${LIBRARY_NAME}',
     version='0.1.0',
     packages=['${LIBRARY_NAME}'],
-    package_dir={'${LIBRARY_NAME}': '..'}
+    package_dir={'${LIBRARY_NAME}': '.'}
 )

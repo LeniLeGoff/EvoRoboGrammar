@@ -18,18 +18,71 @@ enum SelectorType{
 };
 
 struct selectors {
+    template<class ind_t>
+    using deterministic_selector_t = std::function< std::vector<ind_t>(const std::vector<ind_t>&)>;
     static apear::selectors::selector_t<HKInd::Ptr> random;
     static int sparsity_top_nbr;
     static apear::selectors::selector_t<HKInd::Ptr> sparsity;
     static double pareto_goal_tolerance;
     static double pareto_sparsity_tolerance;
     static apear::selectors::selector_t<HKInd::Ptr> pareto_tournament;
+    template<class ind_t>
+    static inline deterministic_selector_t<ind_t> pareto = [](const std::vector<ind_t>& solutions) -> std::vector<ind_t>{
+        std::vector<ind_t> selection;
+        if(solutions.size() == 1){
+            selection.push_back(solutions.at(0));
+            return selection;
+        }
+        std::vector<size_t> pareto_front;
+        std::vector<bool> undominated(solutions.size(),true);
+        bool dominating_sparsity = false;
+        bool dominating_quality = false;
+        for(size_t i = 0; i < solutions.size(); i++){
+            for(size_t j = i; j < solutions.size(); j++){
+                if(undominated[i] == false)
+                    break;
+                if(undominated[j] == false)
+                    continue;
+                const ind_t &ind1 = solutions.at(i);
+                const ind_t &ind2 = solutions.at(j);
+                if(ind1->get_morph_genome()->id() == ind2->get_morph_genome()->id())
+                    continue;
+                dominating_quality = false;
+                dominating_sparsity = false;
+                if(ind1->get_objectives()[0] > ind2->get_objectives()[0])
+                    dominating_quality = true;
+                if(ind1->get_sparsity_score() > ind2->get_sparsity_score())
+                    dominating_sparsity = true;
+                if(dominating_quality && dominating_sparsity)
+                    undominated[j] = false;
+                dominating_quality = false;
+                dominating_sparsity = false;
+                if(ind2->get_objectives()[0] > ind1->get_objectives()[0])
+                    dominating_quality = true;
+                if(ind2->get_sparsity_score() > ind1->get_sparsity_score())
+                    dominating_sparsity = true;
+                if(dominating_quality && dominating_sparsity)
+                    undominated[i] = false;
+            }
+        }
+        for(size_t i = 0; i < undominated.size(); i++){
+            if(undominated[i])
+                pareto_front.push_back(i);
+        }
+        std::cout << std::endl;
+        for(size_t i : pareto_front){
+            selection.push_back(solutions.at(i));
+        }
+        return selection;
+    };
 };
+
+
 
 template<class ind_t>
 void load_archive(apear::UnstructuredArchive<std::shared_ptr<ind_t>,int> &archive,const std::string &log_folder, const std::string &grammar_file){
     using ind_t_ptr = std::shared_ptr<ind_t>;
-    std::ifstream gen_file, fit_file, parent_file;
+    std::ifstream gen_file, parent_file;
 
     parent_file.open(log_folder + "/parent_pool.csv");
     if(!parent_file){
@@ -41,11 +94,17 @@ void load_archive(apear::UnstructuredArchive<std::shared_ptr<ind_t>,int> &archiv
     std::string line, last_line;
     while(std::getline(parent_file,line))
         last_line = line;
-    std::vector<std::string> string_ids;
-    apear::misc::split_line(last_line,",",string_ids);
+    std::vector<std::string> string_ind;
+    apear::misc::split_line(last_line,";",string_ind);
     std::vector<int> parent_ids;
-    for(const std::string &id: string_ids)
-        parent_ids.push_back(std::stoi(id));
+    std::vector<double> fitnesses, sparsity_scores;
+    for(const std::string &ind: string_ind){
+        std::vector<std::string> infos;
+        apear::misc::split_line(ind,",",infos);
+        parent_ids.push_back(std::stoi(infos[0]));
+        fitnesses.push_back(std::stod(infos[1]));
+        sparsity_scores.push_back(std::stod(infos[2]));
+    }
     parent_file.close();
 
     gen_file.open(log_folder + "/genomes.csv");
@@ -54,24 +113,22 @@ void load_archive(apear::UnstructuredArchive<std::shared_ptr<ind_t>,int> &archiv
         return;
     }
 
-    fit_file.open(log_folder + "/fitnesses.csv");
-    if(!fit_file){
-        std::cerr << "Unable to open " << log_folder << "/fitnesses.csv" << std::endl;
-        return;
-    }
 
     std::map<int,ind_t_ptr> parents;
-    for(const int &id: parent_ids){
-        std::cout << "create individual " << id << std::endl;
+    for(int i = 0; i < parent_ids.size(); i++){
+        int id = parent_ids[i];
+        // std::cout << "create individual " << id << std::endl;
         RoboGrammarGenome::Ptr gen = std::make_shared<RoboGrammarGenome>();
         gen->make_grammar(grammar_file);
         gen->set_id(id);
         parents[id] = std::make_shared<ind_t>(gen,std::make_shared<apear::EmptyGenome>());
+        parents[id]->set_objectives({fitnesses[i]});
+        parents[id]->set_sparsity_score(sparsity_scores[i]);
     }
     //Extract genomes
     std::cout << "Extract genomes " << std::endl;
     for(std::string line; std::getline(gen_file,line);){
-        std::cout << line << std::endl;
+        // std::cout << line << std::endl;
         std::vector<std::string> splitted_line;
         apear::misc::split_line(line," ",splitted_line);
         int id = std::stoi(splitted_line[0]);
@@ -89,21 +146,7 @@ void load_archive(apear::UnstructuredArchive<std::shared_ptr<ind_t>,int> &archiv
     }
     gen_file.close();
 
-    //extract fitness scores
-    std::cout << "Extract fitnesses " << std::endl;
-    for(std::string line; std::getline(fit_file,line);){
-        std::cout << line << std::endl;
-        std::vector<std::string> splitted_line;
-        apear::misc::split_line(line,",",splitted_line);
-        int id = std::stoi(splitted_line[0]);
-        if(parents.find(id) == parents.end())
-            continue;
-        if(std::stoi(splitted_line[0]) == id){
-            parents[id]->set_objectives({std::stod(splitted_line[3])});
-            parents[id]->get_morph_genome()->set_parents_ids({std::stoi(splitted_line[1]),std::stoi(splitted_line[2])});
-        }
-    }
-    fit_file.close();
+
     for(const auto& [id,parent]: parents)
         archive.push_back(parent);
 }

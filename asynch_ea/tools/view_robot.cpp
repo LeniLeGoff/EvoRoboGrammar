@@ -46,7 +46,7 @@ private:
 };
 
 int main(int argc, char** argv){
-    if(argc == 2){
+    if(argc < 2){
         std::cout << "usage: arg1 : grammar file" << std::endl
                   << "usage: arg2 : with random control: 1 for yes or 0 for no" << std::endl
                   << "\targs: rule sequence" << std::endl;

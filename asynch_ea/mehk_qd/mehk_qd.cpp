@@ -134,7 +134,6 @@ apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::pareto_tournament = [
     std::cout << "PARETO TOURNAMENT SELECTOR" << std::endl;
     if(solutions.size() == 1){
         for(size_t s = 0; s < selection.size(); s++)
-
             selection[s] = solutions.at(0);
         return;
     }
