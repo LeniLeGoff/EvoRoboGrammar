@@ -166,4 +166,12 @@ public:
     ParentsLog(const ParentsLog& l) : Logging(l){}
     void saveLog(const apear::EA<HKInd>::Ptr&) override;
 };
-}
+
+class DescriptorsLog: public apear::Logging<HKInd,RoboGrammarSimulator>{
+public:
+    DescriptorsLog(): Logging(){}
+    DescriptorsLog(const std::string &file) : Logging(file){}
+    DescriptorsLog(const DescriptorsLog& l) : Logging(l){}
+    void saveLog(const apear::EA<HKInd>::Ptr&) override;
+};
+}//ea_rg

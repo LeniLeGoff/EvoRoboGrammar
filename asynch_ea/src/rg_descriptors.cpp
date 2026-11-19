@@ -49,6 +49,14 @@ std::vector<double> RoboGrammarDescriptors::compute_descriptor_vector(const rg::
     return desc_vect;
 }
 
+std::string RoboGrammarDescriptors::to_string(const std::vector<double> &desc){
+    std::stringstream sstr;
+    sstr << desc[0];
+    for(size_t i = 1; i < desc.size(); i++)
+        sstr << "," << desc[i];
+    return sstr.str();
+}
+
 descriptor_fct RoboGrammarDescriptors::number_of_parts = [](const rg::Graph& graph) -> double{
     double descr = 0;
     for(const rg::Edge& edge: graph.edges_){

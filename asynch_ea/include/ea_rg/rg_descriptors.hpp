@@ -25,6 +25,8 @@ struct RoboGrammarDescriptors{
     static descriptor_fct number_of_limb_lift_joints;
     static descriptor_fct number_of_limb_roll_joints;
 
+    static std::string to_string(const std::vector<double>&);
+
     void use_all_descriptors();
     void set_descriptors(const std::vector<descriptor_fct> &);
     std::vector<double> compute_descriptor_vector(const robot_design::Graph &graph);

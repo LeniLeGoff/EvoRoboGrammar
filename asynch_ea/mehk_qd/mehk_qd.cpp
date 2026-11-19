@@ -15,7 +15,6 @@ using namespace ea_rg;
 namespace apear_st = apear::settings;
 using UArchive = apear::UnstructuredArchive<HKInd::Ptr,int>;
 using GArchive = apear::InfiniteGridArchive<HKInd::Ptr>;
-using Archive = UArchive;
 double selectors::pareto_goal_tolerance = 0;
 double selectors::pareto_sparsity_tolerance = 0;
 int selectors::sparsity_top_nbr = 1;
@@ -35,16 +34,6 @@ int main(int argc, char** argv){
     apear_st::ParametersMapPtr param = std::make_shared<apear_st::ParametersMap>(
        apear_st::loadParameters(argv[1]));
 
-    if(apear_st::getParameter<apear_st::Integer>(param,"#archiveType").value == ea_rg::UNSTRUCTURED)
-        using Archive = UArchive;
-    else if(apear_st::getParameter<apear_st::Integer>(param,"#archiveType").value == ea_rg::GRID)
-        using Archive = GArchive;
-    else{
-        std::cerr << "invalid archive type" << std::endl;
-        return 1;
-    }
-
-    using MEHKQD = apear::AsyncMorphoEvolutionQD<HKInd,RoboGrammarGenome,Archive>;
 
     //create log folder
     std::string log_repo = apear_st::getParameter<apear_st::String>(param,"#logRepository").value;
@@ -66,14 +55,29 @@ int main(int argc, char** argv){
     dealer.add_logging(std::make_shared<RGGenomeLog<HKInd>>(apear_st::getParameter<apear_st::String>(param,"#genomeLogFile").value));
     dealer.add_logging(std::make_shared<FitnessLog<HKInd>>(apear_st::getParameter<apear_st::String>(param,"#fitnessLogFile").value));
     dealer.add_logging(std::make_shared<ParentsLog>(apear_st::getParameter<apear_st::String>(param,"#parentsLogFile").value));
+    dealer.add_logging(std::make_shared<DescriptorsLog>(apear_st::getParameter<apear_st::String>(param,"#descriptorsLogFile").value));
     dealer.add_logging(std::make_shared<RolloutLog<HKInd>>());
     dealer.add_logging(std::make_shared<TrajectoryLog<HKInd>>());
 
-
+    apear::EA<HKInd>::Ptr ame;
     //create the evolutionary algorithm: Asynchrounous Morpho-Evolution with Quality-Diversity and Homeokinetic controller MEHKQD
-    apear::EA<HKInd>::Ptr ame = std::make_unique<MEHKQD>(rand_num,param);
+    if(apear_st::getParameter<apear_st::Integer>(param,"#archiveType").value == ea_rg::UNSTRUCTURED){
+        ame = std::make_unique<apear::AsyncMorphoEvolutionQD<HKInd,RoboGrammarGenome,UArchive>>(rand_num,param);
+    }
+    else if(apear_st::getParameter<apear_st::Integer>(param,"#archiveType").value == ea_rg::GRID)
+        ame = std::make_unique<apear::AsyncMorphoEvolutionQD<HKInd,RoboGrammarGenome,GArchive>>(rand_num,param);
+    else{
+        std::cerr << "invalid archive type" << std::endl;
+        return 1;
+    }
 
-
+    ame->set_post_eval_op([](std::vector<HKInd::Ptr>& pop){ //computing of descriptor
+        ea_rg::RoboGrammarDescriptors descriptors;
+        descriptors.use_all_descriptors();
+        for(HKInd::Ptr &ind: pop)
+            ind->set_descriptors(descriptors.compute_descriptor_vector(
+                std::dynamic_pointer_cast<ea_rg::RoboGrammarGenome>(ind->get_morph_genome())->get_graph()));
+    });
     //initialise an archive
     if(apear_st::getParameter<apear_st::Integer>(param,"#archiveType").value == ea_rg::UNSTRUCTURED)
         init_unstructured_archive(ame);
@@ -106,17 +110,16 @@ int main(int argc, char** argv){
 }
 
 void ea_rg::init_grid_archive(apear::EA<HKInd>::Ptr &ame){
-    using Archive = GArchive;
-    using MEHKQD = apear::AsyncMorphoEvolutionQD<HKInd,RoboGrammarGenome,Archive>;
+    using MEHKQD = apear::AsyncMorphoEvolutionQD<HKInd,RoboGrammarGenome,GArchive>;
     const apear_st::ParametersMapPtr &param = ame->get_parameters();
 
     std::vector<double> intervals = apear_st::getParameter<apear_st::Sequence<double>>(param,"#gridArchiveIntervals").value;
 
     //initialise an unstructured archive
-    Archive::comparator_t comparator([](const HKInd::Ptr& a, const HKInd::Ptr& b) -> bool{//comparator for quality
+    GArchive::comparator_t comparator([](const HKInd::Ptr& a, const HKInd::Ptr& b) -> bool{//comparator for quality
         return a->get_objectives()[0] > b->get_objectives()[0];
     });
-    Archive::descriptor_t descriptor_fct([](const HKInd::Ptr &ind)->std::vector<double>{
+    GArchive::descriptor_t descriptor_fct([](const HKInd::Ptr &ind)->std::vector<double>{
         ea_rg::RoboGrammarDescriptors descriptors;
         descriptors.use_all_descriptors();
         return descriptors.compute_descriptor_vector(
@@ -128,30 +131,29 @@ void ea_rg::init_grid_archive(apear::EA<HKInd>::Ptr &ame){
 }
 
 void ea_rg::init_unstructured_archive(apear::EA<HKInd>::Ptr &ame){
-    using Archive = UArchive;
-    using MEHKQD = apear::AsyncMorphoEvolutionQD<HKInd,RoboGrammarGenome,Archive>;
+    using MEHKQD = apear::AsyncMorphoEvolutionQD<HKInd,RoboGrammarGenome,UArchive>;
     const apear_st::ParametersMapPtr &param = ame->get_parameters();
 
     //initialise an unstructured archive
-    Archive::comparator_t comparator([](const HKInd::Ptr& a, const HKInd::Ptr& b) -> bool{//comparator for quality
+    UArchive::comparator_t comparator([](const HKInd::Ptr& a, const HKInd::Ptr& b) -> bool{//comparator for quality
         return a->get_objectives()[0] > b->get_objectives()[0];
     });
-    Archive::distance_fct_t distance_fct([](const HKInd::Ptr& a, const HKInd::Ptr& b) -> int{//distance for diversity
+    UArchive::distance_fct_t distance_fct([](const HKInd::Ptr& a, const HKInd::Ptr& b) -> int{//distance for diversity
         return robot_design::tree_edit_distance(std::dynamic_pointer_cast<RoboGrammarGenome>(a->get_morph_genome())->get_graph(),
                                                 std::dynamic_pointer_cast<RoboGrammarGenome>(b->get_morph_genome())->get_graph());
     });
     int selector_type = apear_st::getParameter<apear_st::Integer>(param,"#archiveSelectorType").value;
     int nbr_ngb = apear_st::getParameter<apear_st::Integer>(param,"#sparsityNbrNeighbors").value;
     if(selector_type == ea_rg::RANDOM)
-        dynamic_cast<MEHKQD*>(ame.get())->init_archive(1,distance_fct,comparator,ea_rg::selectors::random);
+        dynamic_cast<MEHKQD&>(*ame).init_archive(1,distance_fct,comparator,ea_rg::selectors::random);
     else if(selector_type == ea_rg::SPARSITY){
         selectors::sparsity_top_nbr = apear_st::getParameter<apear_st::Integer>(param,"#sparsityTopNumber").value;
-        dynamic_cast<MEHKQD*>(ame.get())->init_archive(1,distance_fct,comparator,ea_rg::selectors::sparsity,nbr_ngb);
+        dynamic_cast<MEHKQD&>(*ame).init_archive(1,distance_fct,comparator,ea_rg::selectors::sparsity,nbr_ngb);
     }
     else if(selector_type == ea_rg::PARETO){
         selectors::pareto_goal_tolerance = apear_st::getParameter<apear_st::Double>(param,"#paretoGoalTolerance").value;
         selectors::pareto_sparsity_tolerance = apear_st::getParameter<apear_st::Double>(param,"#paretoSparsityTolerance").value;
-        dynamic_cast<MEHKQD*>(ame.get())->init_archive(1,distance_fct,comparator,ea_rg::selectors::pareto_tournament,nbr_ngb);
+        dynamic_cast<MEHKQD&>(*ame).init_archive(1,distance_fct,comparator,ea_rg::selectors::pareto_tournament,nbr_ngb);
     }
 }
 
@@ -259,18 +261,13 @@ apear::selectors::selector_t<HKInd::Ptr> ea_rg::selectors::pareto_tournament = [
 };
 
 void ParentsLog::saveLog(const apear::EA<HKInd>::Ptr &ea){
+
+    std::vector<HKInd::Ptr> inds;
     if(apear_st::getParameter<apear_st::Integer>(ea->get_parameters(),"#archiveType").value == ea_rg::UNSTRUCTURED)
-        using Archive = UArchive;
+        inds = static_cast<apear::AsyncMorphoEvolutionQD<HKInd,RoboGrammarGenome,UArchive>&>(*ea).get_parent_pool().get_solutions();
     else if(apear_st::getParameter<apear_st::Integer>(ea->get_parameters(),"#archiveType").value == ea_rg::GRID)
-        using Archive = GArchive;
-    else{
-        std::cerr << "invalid archive type" << std::endl;
-        return;
-    }
+        inds = static_cast<apear::AsyncMorphoEvolutionQD<HKInd,RoboGrammarGenome,GArchive>&>(*ea).get_parent_pool().get_solutions();
 
-    using MEHKQD = apear::AsyncMorphoEvolutionQD<HKInd,RoboGrammarGenome,Archive>;
-
-    const std::vector<HKInd::Ptr>& inds = static_cast<MEHKQD*>(ea.get())->get_parent_pool().get_solutions();
     if(inds.empty())
         return;
 
@@ -290,5 +287,18 @@ void ParentsLog::saveLog(const apear::EA<HKInd>::Ptr &ea){
     if(!openOLogFile(ofs))
         return;
     ofs << sstr.str() << std::endl;
+    ofs.close();
+}
+
+void DescriptorsLog::saveLog(const apear::EA<HKInd>::Ptr &ea){
+    std::vector<HKInd::Ptr> inds = ea->evaluated();
+    if(inds.empty())
+        return;
+    std::ofstream ofs;
+    if(!openOLogFile(ofs))
+        return;
+    for(size_t i = 0; i < inds.size(); i++)
+        ofs << inds[i]->get_morph_genome()->id() << "," << RoboGrammarDescriptors::to_string(inds[i]->get_descriptors()) << std::endl;
+
     ofs.close();
 }
