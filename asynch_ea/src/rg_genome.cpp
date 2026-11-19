@@ -317,6 +317,7 @@ void RoboGrammarInd::update_sparsity_score(double distance){
 }
 
 
+
 void HKInd::init(){
     _morph_genome->init();
 }
