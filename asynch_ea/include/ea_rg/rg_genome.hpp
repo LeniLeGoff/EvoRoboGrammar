@@ -111,11 +111,14 @@ public:
 
     std::vector<double> nn_distances;
     void update_sparsity_score(double distance);
+    const std::vector<double> &get_descriptors(){return _descriptors;}
+    void set_descriptors(const std::vector<double> &descriptors){_descriptors = descriptors;}
 protected:
     void _create_morphology() override;
     void _create_controller() override{}
     rd::Robot _robot;
     double _sparsity_score = 0;
+    std::vector<double> _descriptors;
 };
 
 enum HKType{

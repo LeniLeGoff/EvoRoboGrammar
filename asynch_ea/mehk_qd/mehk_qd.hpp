@@ -6,16 +6,22 @@
 #include "robot_design/graph.h"
 
 
-
 //ARCHIVE SELECTORS
 namespace ea_rg {
 
+enum ArchiveType{
+    UNSTRUCTURED = 0,
+    GRID
+};
 
 enum SelectorType{
     RANDOM = 0,
     SPARSITY,
     PARETO
 };
+
+void init_grid_archive(apear::EA<HKInd>::Ptr &ame);
+void init_unstructured_archive(apear::EA<HKInd>::Ptr &ame);
 
 struct selectors {
     template<class ind_t>

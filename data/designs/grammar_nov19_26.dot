@@ -1,0 +1,194 @@
+digraph make_robot {
+  subgraph L {
+    robot [require_label="robot"];
+  }
+
+  subgraph R {
+    head [label="head"];
+    body [label="body"];
+    tail [label="tail"];
+    head -> body [label="body_joint"];
+    body -> tail [label="body_joint"];
+  }
+}
+
+digraph append_body {
+  subgraph L {
+    tail [require_label="tail"];
+    parent -> tail [id="parent_edges"];
+  }
+
+  subgraph R {
+    tail [label="tail"];
+    body [label="body"];
+    parent -> body [id="parent_edges"];
+    body -> tail [label="body_joint"];
+  }
+}
+
+digraph make_body_with_legs {
+  subgraph L {
+    body [require_label="body"];
+  }
+
+  subgraph R {
+    body [shape=capsule, length=0.15, radius=0.045, density=3.0,label="body"];
+    limb_mount [shape=capsule, length=0.1, radius=0.025,label="limb_mount"];
+    limb_link [label="limb_link"];
+    limb [label="limb"];
+    body -> limb_mount [type=fixed, offset=0.5, axis_angle="0 1 0 90",label="body_limb_mount"];
+    body -> limb_mount [type=fixed, offset=0.5, axis_angle="0 1 0 90",label="body_limb_mount",
+                             mirror=true];
+    limb_mount -> limb_link [label="limb_joint"];
+    limb_link -> limb;
+  }
+}
+
+digraph make_body_without_legs {
+  subgraph L {
+    body [require_label="body"];
+  }
+
+  subgraph R {
+    body [shape=capsule, length=0.15, radius=0.045, density=3.0,label="body"];
+  }
+}
+
+digraph append_limb_link {
+  subgraph L {
+    limb [require_label="limb"];
+    parent -> limb;
+  }
+
+  subgraph R {
+    limb [label="limb"];
+    limb_link [label="limb_link"];
+    parent -> limb_link [label="limb_joint"];
+    limb_link -> limb;
+  }
+}
+
+digraph end_limb {
+  subgraph L {
+    limb [require_label="limb"];
+    parent -> limb;
+  }
+
+  subgraph R {
+    parent;
+  }
+}
+
+digraph end_tail {
+  subgraph L {
+    tail [require_label="tail"];
+    parent -> tail;
+  }
+
+  subgraph R {
+    parent;
+  }
+}
+
+digraph end_head {
+  subgraph L {
+    head [require_label="head"];
+    head -> child;
+  }
+
+  subgraph R {
+    child;
+  }
+}
+
+digraph make_normal_limb_link {
+  subgraph L {
+    limb_link [require_label="limb_link"];
+  }
+
+  subgraph R {
+    limb_link [shape=capsule, length=0.1, radius=0.025,label="limb_normal_link"];
+  }
+}
+
+digraph make_long_limb_link {
+  subgraph L {
+    limb_link [require_label="limb_link"];
+  }
+
+  subgraph R {
+    limb_link [shape=capsule, length=0.15, radius=0.025,label="limb_long_link"];
+  }
+}
+
+digraph make_fixed_body_joint {
+  subgraph L {
+    parent -> child [require_label="body_joint"];
+  }
+
+  subgraph R {
+    parent -> child [type=fixed,label="body_fixed_joint"];
+  }
+}
+
+digraph make_roll_body_joint {
+  subgraph L {
+    parent -> child [require_label="body_joint"];
+  }
+
+  subgraph R {
+    parent -> child [type=hinge, joint_axis="1 0 0",label="body_roll_joint"];
+  }
+}
+
+digraph make_swing_body_joint {
+  subgraph L {
+    parent -> child [require_label="body_joint"];
+  }
+
+  subgraph R {
+    parent -> child [type=hinge, joint_axis="0 1 0", color="0 0.5 0",label="body_swing_joint"];
+  }
+}
+
+digraph make_lift_body_joint {
+  subgraph L {
+    parent -> child [require_label="body_joint"];
+  }
+
+  subgraph R {
+    parent -> child [type=hinge, joint_axis="0 0 1",label="body_lift_joint"];
+  }
+}
+
+digraph make_roll_limb_joint {
+  subgraph L {
+    parent -> child [require_label="limb_joint"];
+  }
+
+  subgraph R {
+    parent -> child [type=hinge, axis_angle="0 1 0 0", joint_axis="1 0 0",label="limb_roll_joint"];
+  }
+}
+
+
+digraph make_swing_limb_joint {
+  subgraph L {
+    parent -> child [require_label="limb_joint"];
+  }
+
+  subgraph R {
+    parent -> child [type=hinge, joint_axis="0 1 0", color="0 0.5 0",label="limb_swing_joint"];
+  }
+}
+
+digraph make_lift_limb_joint {
+  subgraph L {
+    parent -> child [require_label="limb_joint"];
+  }
+
+  subgraph R {
+    parent -> child [type=hinge, axis_angle="0 0 1", joint_axis="0 0 1",label="limb_lift_joint"];
+  }
+}
+

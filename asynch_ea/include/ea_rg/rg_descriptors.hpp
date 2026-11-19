@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <robot_design/graph.h>
+#define GET_VARIABLE_NAME(Variable) (#Variable)
 
 namespace ea_rg{
 
@@ -27,7 +28,7 @@ struct RoboGrammarDescriptors{
     void use_all_descriptors();
     void set_descriptors(const std::vector<descriptor_fct> &);
     std::vector<double> compute_descriptor_vector(const robot_design::Graph &graph);
-
+    std::vector<std::string> descriptor_names;
 private:
     std::vector<descriptor_fct> descriptors;
 

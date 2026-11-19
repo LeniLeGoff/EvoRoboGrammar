@@ -4,26 +4,29 @@
 
 #simTimeStep,double,0.05
 #ctrlFreq,double,0.6
-#maxEpisodeTime,double,6
+#maxEpisodeTime,double,600
 #initPosition,sequence_double,0;0.1;0
 #initOrientation,sequence_double,0;0;1;0
 #evaluationOrder,int,0
 
-#populationSize,int,10
+#populationSize,int,100
 #maxNbrEval,int,10000
 
 
-#grammarFile,string,/home/leni/git/EvoRoboGrammar/data/designs/grammar_mar19_26.dot
+#grammarFile,string,/home/leni/git/EvoRoboGrammar/data/designs/grammar_nov19_26.dot
 #ruleSeqInitSize,int,10
 #ruleSeqMaxSize,int,80
 #mutationRate,double,1
 #probGrow,double,0.8
 #probPrune,double,0
 #probSwap,double,0.2
-#archiveSelectorType,int,1
+
+#archiveType,int,1
+#archiveSelectorType,int,2
+#gridArchiveIntervals,sequence_double,1;1;1;1;1;1;1;1;1;1;1;1;1
 #sparsityNbrNeighbors,int,5
-#paretoGoalTolerance,double,5
-#paretoSparsityTolerance,double,0.5
+#paretoGoalTolerance,double,100
+#paretoSparsityTolerance,double,1
 #sparsityTopNumber,int,20
 
 #inputNoiseStrength,double,0.1
@@ -46,7 +49,7 @@
 #stabilityReward,double,1
 #nbrNearestNeighbours,int,20
 
-#logRepository,string,/home/leni/evorobo_logs
+#logRepository,string,/media/leni/DATADRIVE1/evorobo_logs
 #genomeLogFile,string,genomes.csv
 #fitnessLogFile,string,fitnesses.csv
 #parentsLogFile,string,parent_pool.csv

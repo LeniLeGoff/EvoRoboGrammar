@@ -15,3 +15,7 @@ target_include_directories(test_robot_distance PUBLIC ../include/)
 add_executable(test_load_archive test_load_archive.cpp)
 target_link_libraries(test_load_archive PUBLIC ea_rg robotdesign)
 target_include_directories(test_load_archive PUBLIC ../ ../include/)
+
+add_executable(test_descriptors test_descriptors.cpp)
+target_link_libraries(test_descriptors PUBLIC ea_rg robotdesign)
+target_include_directories(test_descriptors PUBLIC ../ ../include/)
