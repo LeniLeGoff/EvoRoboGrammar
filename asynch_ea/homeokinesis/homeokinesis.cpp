@@ -34,7 +34,7 @@ int main(int argc, char** argv){
         std::cout << "invalid rule sequence format, needs an even number of rules" << std::endl;
         return 1;
     }
-    for(int i = 0; i < rules.size(); i+=2){
+    for(size_t i = 0; i < rules.size(); i+=2){
         rule_seq.push_back(std::make_pair(rules[i],rules[i+1]));
     }
 

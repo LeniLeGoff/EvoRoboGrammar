@@ -82,7 +82,6 @@ int ted_rec(const Graph &g1, const Graph &g2,const Tree::Ptr &t1,const Tree::Ptr
     std::vector<EdgeIndex> edges1 = t1->edges;
     std::vector<EdgeIndex> edges2 = t2->edges;
     std::vector<std::pair<int,int>> child_pairing;
-    auto itei = edges1.begin();
     int i = 0, j = 0;
     for(size_t ei = 0; ei < edges1.size(); ei++){
         int eidx = edges1[ei];

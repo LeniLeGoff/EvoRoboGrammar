@@ -24,7 +24,6 @@ target_include_directories(ea_rg PUBLIC
 if(WITH_RENDERING)
     target_compile_definitions(ea_rg PUBLIC RENDERING)
 endif()
-target_compile_options(ea_rg PRIVATE -Wall -Werror)
 
 add_subdirectory(tests)
 add_subdirectory(mehk)

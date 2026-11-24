@@ -100,7 +100,6 @@ int main(int argc, char** argv){
     ViewInd::Ptr ind = std::make_shared<ViewInd>(rand_num,parameters);
     ind->init();
     ind->set_rules(rule_seq);
-    int nbr_of_step = ind->load_rollout(std::string(argv[2]));
     double time_step = apear::settings::getParameter<apear::settings::Double>(parameters,"#simTimeStep").value;
     // apear::settings::setParameter(parameters,"#maxEpisodeTime",std::make_shared<apear::settings::Double>(nbr_of_step * time_step));
     // apear::settings::setParameter(parameters,"#ctrlFreq",std::make_shared<const apear::settings::Double>(time_step));

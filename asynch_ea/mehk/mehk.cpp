@@ -69,7 +69,7 @@ int main(int argc, char** argv){
 //LOGGING CLASSES
 
 void ParentsLog::saveLog(const apear::EA<HKInd>::Ptr &ea){
-    int pop_size = apear_st::getParameter<apear_st::Integer>(ea->get_parameters(),"#populationSize").value;
+    size_t pop_size = static_cast<size_t>(apear_st::getParameter<apear_st::Integer>(ea->get_parameters(),"#populationSize").value);
     if(static_cast<apear::AsyncMorphoEvolution<HKInd,RoboGrammarGenome>*>(ea.get())->get_parent_pool().size() < pop_size)
         return;
     std::ofstream log_file;

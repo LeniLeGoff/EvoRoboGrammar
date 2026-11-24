@@ -121,7 +121,7 @@ void load_archive(apear::UnstructuredArchive<std::shared_ptr<ind_t>,int> &archiv
 
 
     std::map<int,ind_t_ptr> parents;
-    for(int i = 0; i < parent_ids.size(); i++){
+    for(size_t i = 0; i < parent_ids.size(); i++){
         int id = parent_ids[i];
         // std::cout << "create individual " << id << std::endl;
         RoboGrammarGenome::Ptr gen = std::make_shared<RoboGrammarGenome>();
