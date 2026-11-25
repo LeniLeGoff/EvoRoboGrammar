@@ -100,10 +100,8 @@ int main(int argc, char** argv){
     apear_st::saveParameters(apear::logging::log_folder + "/parameters.csv",param);
 
     //run the experiment
-    // do{
-    //     dealer.update_simulators();
-    // }while(dealer.update_ea());
     dealer.run_threaded_updates();
+    // dealer.run();
 
     return 0;
 
@@ -117,6 +115,7 @@ void ea_rg::init_grid_archive(apear::EA<HKInd>::Ptr &ame){
 
     //initialise an unstructured archive
     GArchive::comparator_t comparator([](const HKInd::Ptr& a, const HKInd::Ptr& b) -> bool{//comparator for quality
+        std::cout << "solutions comparison for archive addition : new " << a->get_objectives()[0] << " vs old " << b->get_objectives()[0] << std::endl;
         return a->get_objectives()[0] > b->get_objectives()[0];
     });
     GArchive::descriptor_t descriptor_fct([](const HKInd::Ptr &ind)->std::vector<double>{
