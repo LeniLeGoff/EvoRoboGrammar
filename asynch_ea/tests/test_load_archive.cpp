@@ -1,4 +1,6 @@
 #include "mehk_qd/mehk_qd.hpp"
+#include "mehk_qd/archive_loading_fcts.hpp"
+
 using namespace ea_rg;
 using Archive = apear::UnstructuredArchive<RoboGrammarInd::Ptr,int>;
 
@@ -17,7 +19,7 @@ int main(int argc, char** argv){
     });
     Archive archive(1,distance_fct,comparator,apear::selectors::random<RoboGrammarInd::Ptr>,5);
 
-    ea_rg::load_archive<ea_rg::RoboGrammarInd>(archive,argv[2],argv[1]);
+    ea_rg::load_unstructured_archive<ea_rg::RoboGrammarInd>(archive,argv[2],argv[1]);
 
     archive.compute_sparsity_scores(5);
     std::vector<ea_rg::RoboGrammarInd::Ptr> pareto_front = ea_rg::selectors::pareto<ea_rg::RoboGrammarInd::Ptr>(archive.get_solutions());

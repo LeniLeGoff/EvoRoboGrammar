@@ -6,12 +6,14 @@
 #include "ea_rg/rg_genome.hpp"
 #include "ea_rg/rg_descriptors.hpp"
 #include "mehk_qd/mehk_qd.hpp"
+#include "mehk_qd/archive_loading_fcts.hpp"
 
 namespace py = pybind11;
 using namespace apear;
 using namespace ea_rg;
 
 using UArchive = UnstructuredArchive<RoboGrammarInd::Ptr,int>;
+using GArchive = InfiniteGridArchive<RoboGrammarInd::Ptr>;
 using selector_t = apear::selectors::selector_t<RoboGrammarInd::Ptr>;
 
 PYBIND11_MODULE(py_async_ea, m, py::mod_gil_not_used()){
@@ -33,7 +35,16 @@ PYBIND11_MODULE(py_async_ea, m, py::mod_gil_not_used()){
         .def(py::init<int,UArchive::distance_fct_t,UArchive::comparator_t,selector_t,int>())
         .def("compute_sparsity_score",&UArchive::compute_sparsity_scores)
         .def("get_solutions",&UArchive::get_solutions);
-    m.def("load_archive",&ea_rg::load_archive<RoboGrammarInd>);
+
+    py::class_<GArchive>(m,"InfiniteGridArchive")
+        .def(py::init<>())
+        .def(py::init<const std::vector<double>&,GArchive::comparator_t, GArchive::descriptor_t,
+                      selector_t>())
+        .def("get_solutions",&UArchive::get_solutions);
+
+    m.def("load_unstructured_archive",&ea_rg::load_unstructured_archive<RoboGrammarInd>);
+    m.def("load_infinite_grid_archive",&ea_rg::load_infinite_grid_archive<RoboGrammarInd>);
+
     py::class_<ea_rg::selectors>(m,"selectors")
         .def_readonly_static("random",&ea_rg::selectors::random)
         .def_readonly_static("sparsity",&ea_rg::selectors::sparsity)
