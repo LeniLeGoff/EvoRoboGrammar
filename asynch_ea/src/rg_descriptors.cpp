@@ -199,7 +199,7 @@ descriptor_fct RoboGrammarDescriptors::max_limbs_length = [](const rg::Graph& gr
     //Then count with edges how many nodes are connect to these
     size_t i = 0;
     while(limb_links.size() > 0){
-        const rg::Edge *edge = limb_links[0];
+        const rg::Edge *edge = limb_links[i];
         if(limb_lengths.find(edge->head_) != limb_lengths.end()){
             limb_lengths[edge->tail_] = limb_lengths[edge->head_] + 1;
             limb_lengths.erase(edge->head_);
@@ -247,7 +247,7 @@ descriptor_fct RoboGrammarDescriptors::min_limbs_length = [](const rg::Graph& gr
     //Then count with edges how many nodes are connect to these
     size_t i = 0;
     while(limb_links.size() > 0){
-        const rg::Edge *edge = limb_links[0];
+        const rg::Edge *edge = limb_links[i];
         if(limb_lengths.find(edge->head_) != limb_lengths.end()){
             limb_lengths[edge->tail_] = limb_lengths[edge->head_] + 1;
             limb_lengths.erase(edge->head_);
@@ -295,7 +295,7 @@ descriptor_fct RoboGrammarDescriptors::median_limbs_length = [](const rg::Graph&
     //Then count with edges how many nodes are connect to these
     size_t i = 0;
     while(limb_links.size() > 0){
-        const rg::Edge *edge = limb_links[0];
+        const rg::Edge *edge = limb_links[i];
         if(limb_lengths.find(edge->head_) != limb_lengths.end()){
             limb_lengths[edge->tail_] = limb_lengths[edge->head_] + 1;
             limb_lengths.erase(edge->head_);
