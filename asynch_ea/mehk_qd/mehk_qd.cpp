@@ -100,8 +100,8 @@ int main(int argc, char** argv){
     apear_st::saveParameters(apear::logging::log_folder + "/parameters.csv",param);
 
     //run the experiment
-    // dealer.run_threaded_updates();
-    dealer.run();
+    dealer.run_threaded_updates();
+    // dealer.run();
 
     return 0;
 
