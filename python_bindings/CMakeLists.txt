@@ -1,4 +1,3 @@
-set(CMAKE_CXX_STANDARD 17)
 
 set(Python3_FIND_VIRTUALENV "FIRST")
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)

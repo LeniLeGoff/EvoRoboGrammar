@@ -3,6 +3,19 @@ import argparse
 def get_parser():
     parser = argparse.ArgumentParser(description='RL')
     
+    parser.add_argument(
+        "--archive-type",
+        type=str,
+        default="grid",
+        help="archive type: grid | unstructured (default: grid)"
+    )
+
+    parser.add_argument(
+        "--log-folder",
+        type=str,
+        help="Folder with generated robot information"
+    )
+
     # robot_locomotion parameters
     parser.add_argument(
         '--task',

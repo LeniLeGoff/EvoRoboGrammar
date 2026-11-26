@@ -46,6 +46,11 @@ def build_robot(parameters):
 
     return robot
 
+def build_robot_from_graph(graph):
+    robot = build_normalized_robot(graph)
+    finalize_robot(robot)
+    return robot
+
 def get_robot_state(sim, robot_id):
     base_tf = np.zeros((4, 4), order = 'f')
     sim.get_link_transform(robot_id, 0, base_tf)

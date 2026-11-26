@@ -42,10 +42,11 @@ from utils import convert_rule_pairs_to_list,string_to_rule_pairs
 #         self.csv_logger = CSVLogger(exp_name=exp_name,log_dir=log_dir)
 #         self.tio_logger = TrackioLogger(exp_name=exp_name,project=project_name,name=exp_name)
 
-def make_env(parameters, device,parallel=False):
+
+def make_env(parameters, device,parallel=False, graph=None):
     cat_dim = 0
     def maker():
-        return GymEnv("RobotLocomotion-v0", device=device, parameters=parameters)
+        return GymEnv("RobotLocomotion-v0", device=device, parameters=parameters,graph=graph)
     if parallel:
         
         base_env = ParallelEnv(
@@ -133,6 +134,69 @@ def checkpoint_metadata(trainer):
     )
     return {"reward": max_reward}
 
+class SAC:
+    def __init__(self,parameters,device,graph=None):
+        self.env = make_env(parameters,device,parameters["parallel"],graph)
+        self.policy_module = make_policy_module(self.env,make_actor_network(self.env,parameters["hidden_dim"],device))
+        self.qvalue_module = make_qvalue_network(parameters["hidden_dim"],device)
+        out_policy = self.policy_module(self.env.reset())
+        self.qvalue_module(out_policy)
+        self.policy_module.eval()
+        self.qvalue_module.eval()
+        self.collector = Collector(self.env, 
+                          policy=self.policy_module, 
+                          frames_per_batch=parameters["frames_per_batch"],
+                          auto_register_policy_transforms=True)
+        
+        self.logger = CSVLogger(exp_name=parameters["exp_name"], log_dir=parameters["log_dir"])
+        self.replay_buffer = TensorDictReplayBuffer(storage=LazyTensorStorage(100000,device=device),batch_size=parameters["batch_size"]) 
+        self.loss_module = SACLoss(self.policy_module, self.qvalue_module)
+        self.optimizer = optim.Adam(self.loss_module.parameters(), lr=parameters["lr"])
+        self.target_net_updater = SoftUpdate(self.loss_module, eps=parameters["eps"])
+        self.checkpoint = Checkpoint(policy=self.policy_module,format="directory",)
+        self.trainer = SACTrainer(
+        collector=self.collector,
+        total_frames=1000000,
+        frame_skip=1,
+        optim_steps_per_batch=100,
+        loss_module=self.loss_module,
+        optimizer=self.optimizer,
+        replay_buffer=self.replay_buffer,
+        target_net_updater=self.target_net_updater,
+        logger=self.logger,
+        log_interval=parameters["log_interval"],
+        checkpoint=self.checkpoint,
+        checkpoint_rotation=CheckpointRotation(parameters["exp_name"] + "/checkpoints", keep_last=5,keep_best=("reward",'max')),
+        checkpoint_metadata=checkpoint_metadata,)
+
+        self.buffer_hook = ReplayBufferTrainer(
+        self.replay_buffer,
+        flatten_tensordicts=True,)
+        self.buffer_hook.register(self.trainer)
+        self.weight_updater = UpdateWeights(self.collector, update_weights_interval=1)
+        self.weight_updater.register(self.trainer)
+        parallel_env = self.env
+        if parameters["parallel"]:
+            self.validation_env = make_env(parameters, device, parallel=False)
+        self.recorder = LogValidationReward(
+            record_interval=100,  # log every 100 optimization steps
+            record_frames=1000,  # maximum number of frames in the record
+            frame_skip=1,
+            policy_exploration=self.policy_module,
+            environment=self.validation_env,
+            exploration_type=ExplorationType.DETERMINISTIC,
+            log_keys=[("next", "reward")],
+            out_keys={("next", "reward"): "rewards"},
+            log_pbar=True,
+            suffix="test_policy",
+        )
+        self.recorder.register(self.trainer)
+        self.log_reward = LogScalar(log_pbar=True)
+        self.log_reward.register(self.trainer)
+
+    def train(self):
+        self.trainer.train()
+
 if __name__ == "__main__":
     args = rg_args.parse_args(sys.argv)
     parameters = {
@@ -169,84 +233,5 @@ if __name__ == "__main__":
         parameters["rule_sequence"].append(str(rule) + ",")
     # --
     
-    print("Creating environment")
-
-    #TODO make a parallel environment for training
-    env = make_env(parameters, device, parallel=parameters["parallel"])
-    # rollout = env.rollout(3)
-    # print("rollout of three steps:", rollout)
-    # print("Shape of the rollout TensorDict:", rollout.batch_size)
-    
-    print("Creating networks")
-    policy_module = make_policy_module(env, make_actor_network(env, parameters["hidden_dim"], device))
-    qvalue_module = make_qvalue_network(parameters["hidden_dim"], device)
-
-    # Run a dummy forward pass to initialize the Lazy modules (strictly required!)
-    out_policy = policy_module(env.reset())
-    output = env.reset()
-    out_value = qvalue_module(out_policy)
-
-    policy_module.eval()
-    qvalue_module.eval()
-
-    print("Creating collector, loss, and replay buffer")
-    # Set up collector, loss, and replay buffer
-    collector = Collector(env, 
-                          policy=policy_module, 
-                          frames_per_batch=parameters["frames_per_batch"],
-                          auto_register_policy_transforms=True)
-    logger = CSVLogger(exp_name=parameters["exp_name"], log_dir=parameters["log_dir"])
-    # tblogger = TensorboardLogger(exp_name="sac_forward_walking", log_dir="sac_logs")
-    tiologger = TrackioLogger(exp_name=parameters["exp_name"],project="forward_walking",name="test_run")
-    replay_buffer = TensorDictReplayBuffer(storage=LazyTensorStorage(100000,device=device),batch_size=parameters["batch_size"])    
-    loss_module = SACLoss(policy_module, qvalue_module)
-    optimizer = optim.Adam(loss_module.parameters(), lr=parameters["lr"])
-    target_net_updater = SoftUpdate(loss_module, eps=parameters["eps"])
-    checkpoint = Checkpoint(policy=policy_module,format="directory",)
-    print("Creating trainer")
-    # Create and run trainer
-    trainer = SACTrainer(
-        collector=collector,
-        total_frames=1000000,
-        frame_skip=1,
-        optim_steps_per_batch=100,
-        loss_module=loss_module,
-        optimizer=optimizer,
-        replay_buffer=replay_buffer,
-        target_net_updater=target_net_updater,
-        logger=logger,
-        log_interval=parameters["log_interval"],
-        checkpoint=checkpoint,
-        checkpoint_rotation=CheckpointRotation(parameters["exp_name"] + "/checkpoints", keep_last=5,keep_best=("reward",'max')),
-        checkpoint_metadata=checkpoint_metadata,
-    )
-    # target_net_updater_hook = TargetNetUpdaterHook(target_net_updater)
-    # trainer.register_op("post_optim",target_net_updater_hook)
-
-    buffer_hook = ReplayBufferTrainer(
-        replay_buffer,
-        flatten_tensordicts=True,
-    )
-    buffer_hook.register(trainer)
-    weight_updater = UpdateWeights(collector, update_weights_interval=1)
-    weight_updater.register(trainer)
-    parallel_env = env
-    if parameters["parallel"]:
-        validation_env = make_env(parameters, device, parallel=False)
-    recorder = LogValidationReward(
-        record_interval=100,  # log every 100 optimization steps
-        record_frames=1000,  # maximum number of frames in the record
-        frame_skip=1,
-        policy_exploration=policy_module,
-        environment=validation_env,
-        exploration_type=ExplorationType.DETERMINISTIC,
-        log_keys=[("next", "reward")],
-        out_keys={("next", "reward"): "rewards"},
-        log_pbar=True,
-        suffix="test_policy",
-    )
-    recorder.register(trainer)
-    log_reward = LogScalar(log_pbar=True)
-    log_reward.register(trainer)
-    print("Starting training")
-    trainer.train()
+    sac = SAC(parameters,device)
+    sac.train()

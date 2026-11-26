@@ -15,13 +15,16 @@ from learning.environments.common import *
 import tasks
 
 class RobotLocomotionEnv(gym.Env):
-    def __init__(self, parameters):
+    def __init__(self, parameters,graph=None):
         # init task and robot
         print("Initializing RobotLocomotion")
         print("Task: ", parameters["task"])
         task_class = getattr(tasks, parameters["task"])
         self.task = task_class()
-        self.robot = build_robot(parameters)
+        if graph is not None:
+            self.robot = build_from_graph(graph)
+        else:
+            self.robot = build_robot(parameters)
         
         # get init pos
         self.robot_init_pos, has_self_collision = presimulate(self.robot)
@@ -137,6 +140,7 @@ class RobotLocomotionEnv(gym.Env):
         obs = self.get_obs()
         
         truncated = self.detect_crash()
+#        truncated = False
         
         return obs, reward, False, truncated, self.get_info()
     
